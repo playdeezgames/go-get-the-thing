@@ -4,7 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## State of the repo
 
-Only documents so far: `README.md`, `DESIGN.md` (the plan, written against the Anvil's current features), and this file. No code, build or tests exist yet, so there are no build/lint/test commands to record. Add them here when they exist.
+`DESIGN.md` is the plan; `world.json` and `game_tags.json` are exported from the Anvil (do not hand-edit `world.json`). Code: `game/` (platform-independent logic and drawing, with tests) and `app/` (`make_tool`, the Tool the Anvil's frontends drive; see the Anvil's `GAMES.md`). Step 2 is done (the world loads and draws on native and web); game rules, input, HUD and screens are still to do.
+
+```bash
+./build.sh test     # odin test game (needs -collection:anvil, passed for you)
+./build.sh check    # odin check game (native + js_wasm32), then builds native and web
+./build.sh run      # build and run natively (the Anvil's build.sh with APP_DIR=app, output in build/)
+./build.sh serve 8123   # web build + local server
+```
+
+`ANVIL_DIR` overrides the Anvil repo location. The game imports the Anvil only as `anvil:common` and `anvil:anvil_runtime`.
 
 "Go Get the Thing!" is a deliberately tiny demo game whose purpose is to practise making a game with the **Anvil of SPLORR!!**. A character moves in a room with exterior and interior walls; touching the "Thing" picks it up for a point; a countdown timer ends the game and shows the final score. `DESIGN.md` says what to author in the Anvil and how the game is built on it.
 
