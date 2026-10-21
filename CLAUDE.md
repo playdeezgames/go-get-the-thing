@@ -1,0 +1,20 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## State of the repo
+
+Only documents so far: `README.md`, `DESIGN.md` (the plan, written against the Anvil's current features), and this file. No code, build or tests exist yet, so there are no build/lint/test commands to record. Add them here when they exist.
+
+"Go Get the Thing!" is a deliberately tiny demo game whose purpose is to practise making a game with the **Anvil of SPLORR!!**. A character moves in a room with exterior and interior walls; touching the "Thing" picks it up for a point; a countdown timer ends the game and shows the final score. `DESIGN.md` says what to author in the Anvil and how the game is built on it.
+
+## Related repos (added as working directories)
+
+- `/home/yermom/git/anvil-of-splorr`: the asset tool suite (Odin, SDL2 native + `js_wasm32` web). Its `world.json` format (`common/world.odin`; spec in its `WORLD.md`) is where this game's palette, tiles, terrains, sprites, characters and map come from. **The game imports its `anvil_runtime` package** (load a world, tags, `Play_State` for moving characters without touching the world, drawing, `param_number`/`param_text`, `required_missing`) and embeds `world.json` with `#load`; a `World` is ~21 MB (global or `new()`, never by value). The Anvil has characters (uuid table; `World.player`), tags (`solid` built in; the game needs `thing` and `spawn`, declared in a `game_tags.json`), game parameters and a play mode, but no sound. When the game needs something the Anvil lacks, tell the user (they direct the Anvil session through its `USER_STORIES.md`) rather than faking the asset by hand-editing `world.json`. Read its `CLAUDE.md` before writing code here: it defines the frontend/renderer split, the eight-command input model (keyboard, gamepad and mouse must all work; on-screen command names go through `action_label`), the 320x180 logical surface, and Odin build conventions (`./build.sh check|test|run|web`, every `*_test.odin` needs `#+build !js`).
+- `/home/yermom/git/bok-of-splorr`: an Obsidian vault of the user's SPLORR!! knowledge (Odin wasm recipe, Gotchas, Release standard). Notes only; do not edit unless asked. Rules there to honour: never `git push` or run ship/publish scripts unless the user says so explicitly.
+
+## Working rules
+
+- Game logic (state, timer, score, collision, spawning) should stay platform-independent, with only a thin renderer/input layer per frontend, mirroring the Anvil's architecture so the game can run native and on the web.
+- `world.json` is produced by the Anvil's editors; treat it as an input asset. Do not regenerate or overwrite the user's `world.json`, `input_map.json` or `default-font.json` in the Anvil repo.
+- Odin is at `/home/yermom/.local/bin/odin`.
