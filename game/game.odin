@@ -108,6 +108,10 @@ init :: proc(g: ^Game) {
 	g.ms_left = g.round_ms
 	set_seed(g, 1)
 	rt.play_init(&g.play, g.world)
+	reach, width := player_reach(g)
+	if tp := rt.play_position(&g.play, g.thing); !tp.placed || !reach[tp.y * width + tp.x] {
+		g.error = "THE THING CANNOT BE REACHED"
+	}
 }
 
 set_seed :: proc(g: ^Game, seed: u64) {
@@ -175,14 +179,15 @@ move_player :: proc(g: ^Game, dx, dy: int) -> rt.Move_Result {
 	return rt.play_step(&g.play, g.world, g.player, dx, dy)
 }
 
-// Puts the Thing on a random free spawn cell: a `spawn` cell that is not solid and not the
-// player's. Returns false (leaving it off the map) if there is none.
+// Puts the Thing on a random free spawn cell: a `spawn` cell the player can walk to (so not solid,
+// not walled off, not the player's own). Returns false (leaving it off the map) if there is none.
 respawn_thing :: proc(g: ^Game) -> bool {
 	spawn := rt.cells_with_tag(g.world, g.map_index, g.spawn_tag)
 	free_cells := make([dynamic][2]int, 0, len(spawn), context.temp_allocator)
 	pp := rt.play_position(&g.play, g.player)
+	reach, width := player_reach(g)
 	for c in spawn {
-		if rt.cell_is_solid(g.world, g.map_index, c.x, c.y) || (c.x == pp.x && c.y == pp.y) {
+		if !reach[c.y * width + c.x] || (c.x == pp.x && c.y == pp.y) {
 			continue
 		}
 		if rt.play_character_at(&g.play, g.map_index, c.x, c.y) >= 0 {
