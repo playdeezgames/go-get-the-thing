@@ -70,6 +70,8 @@ Game :: struct {
 	load_requested: bool, // the save is asked for once, at start
 	save_requested: bool,
 	step_cooldown_ms: f64, // until the player may step again (the player-speed upgrade)
+	queued:     cm.Action, // one direction pressed during the cooldown, applied when it ends
+	has_queued: bool,
 	shop_sel:   int, // the highlighted shop row: 0 = start a run, then the upgrades
 	message:    string, // a short note in the shop (it points into message_buf), shown until message_ms runs out
 	message_buf: [64]u8,
@@ -246,6 +248,10 @@ update :: proc(g: ^Game, dt_ms: f64) {
 	}
 	g.bonus_flash_ms = max(g.bonus_flash_ms - dt_ms, 0)
 	g.step_cooldown_ms = max(g.step_cooldown_ms - dt_ms, 0) // before the repeat, which may step
+	if g.has_queued && g.step_cooldown_ms == 0 && g.state == .Playing {
+		g.has_queued = false
+		handle_command(g, g.queued)
+	}
 	repeat_held(g, dt_ms)
 	if g.state != .Playing {
 		return

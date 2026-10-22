@@ -183,3 +183,41 @@ test_the_shop_draws_every_row_inside_the_screen :: proc(t: ^testing.T) {
 		testing.expect(t, cm.text_is_drawable(s) && cm.text_width(s) <= cm.SCREEN_W - 28)
 	}
 }
+
+@(test)
+test_a_direction_pressed_during_the_cooldown_is_made_when_it_ends :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	handle_command(g, .Right)
+	handle_command(g, .Right) // too soon: kept, not lost
+	testing.expect_value(t, player_at(g), [2]int{3, 5})
+	update(g, 249)
+	testing.expect_value(t, player_at(g), [2]int{3, 5})
+	update(g, 2)
+	testing.expect_value(t, player_at(g), [2]int{4, 5})
+}
+
+@(test)
+test_a_held_pad_direction_does_not_carry_into_the_shop :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	g.holding, g.held = true, cm.Action.Down
+	g.has_queued, g.queued = true, cm.Action.Right
+	g.ms_left = 1
+	update(g, 5)
+	testing.expect_value(t, g.state, State.Shop)
+	testing.expect(t, !g.holding)
+	testing.expect(t, !g.has_queued)
+	update(g, 1000)
+	testing.expect_value(t, g.shop_sel, 0)
+}
+
+@(test)
+test_red_starts_a_run_from_any_shop_row :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	in_shop(g)
+	g.shop_sel = 3
+	handle_command(g, .Red)
+	testing.expect_value(t, g.state, State.Playing)
+}

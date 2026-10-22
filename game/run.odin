@@ -12,6 +12,7 @@ start_run :: proc(g: ^Game) {
 	g.score = 0
 	g.ms_left = run_ms(g.progress, g.round_ms)
 	g.step_cooldown_ms = 0
+	g.has_queued = false
 	g.time_bonuses = 0
 	g.bonus_flash_ms = 0
 	g.state = .Playing
@@ -27,6 +28,8 @@ finish_run :: proc(g: ^Game) {
 	g.progress.era_earned = min(g.progress.era_earned + g.score, MAX_SAVED_NUMBER)
 	g.progress.best_run = max(g.progress.best_run, g.score)
 	g.last_run = g.score
+	g.has_queued = false
+	g.holding = false // a pad direction still held would race through the shop rows
 	request_save(g)
 	g.shop_sel = 0
 	g.message_ms = 0
@@ -35,7 +38,8 @@ finish_run :: proc(g: ^Game) {
 }
 
 // The command the frontends send. The title goes to the shop, the shop is a list, and in a run the
-// four directions move the player (no faster than the player-speed upgrade allows).
+// four directions move the player (no faster than the player-speed upgrade allows; a press during the
+// cooldown is kept and made when it ends).
 handle_command :: proc(g: ^Game, action: cm.Action) {
 	if g.error != "" {
 		return
@@ -63,6 +67,7 @@ handle_command :: proc(g: ^Game, action: cm.Action) {
 			return
 		}
 		if g.step_cooldown_ms > 0 {
+			g.queued, g.has_queued = action, true // the latest press wins; it fires when the cooldown ends
 			return
 		}
 		if move_player(g, dx, dy) == .Moved {

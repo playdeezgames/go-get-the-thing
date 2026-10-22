@@ -38,6 +38,8 @@ shop_command :: proc(g: ^Game, action: cm.Action) {
 	armed := g.prestige_armed
 	g.prestige_armed = false // anything but a second green on the PRESTIGE row disarms it
 	#partial switch action {
+	case .Red:
+		start_run(g) // from any row
 	case .Up:
 		g.shop_sel = (g.shop_sel + SHOP_ROWS - 1) % SHOP_ROWS
 	case .Down:
