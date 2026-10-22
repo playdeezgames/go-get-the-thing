@@ -21,6 +21,9 @@ hud_text :: proc(g: ^Game) -> (left_label, left_value, right_label, right_value:
 		label := g.bonus_flash_ms > 0 ? fmt.tprintf("+%d SEC", TIME_BONUS_MS / 1000) : "TIME"
 		return "COINS", fmt.tprintf("%d", g.score), label, fmt.tprintf("%d", seconds_left(g))
 	}
+	if g.state == .Shop {
+		return "", "", "", "" // the shop already shows coins and best in its own header
+	}
 	return "COINS", fmt.tprintf("%d", g.progress.coins), "BEST", fmt.tprintf("%d", g.progress.best_run)
 }
 

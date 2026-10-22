@@ -50,6 +50,7 @@ Game :: struct {
 	error:      string, // set when start-up failed: shown instead of the game
 	state:      State,
 	score:      int, // the coins earned in this run (banked into progress.coins when it ends)
+	new_best:   bool, // the last run beat the best run (the shop says so)
 	last_run:   int, // the coins the last run earned, shown in the shop
 	ms_left:    f64,
 	round_ms:   f64,
@@ -298,6 +299,8 @@ draw_frame :: proc(g: ^Game, r: ^cm.Renderer) {
 		if g.state == .Title {
 			banner(r, 56, "GO GET THE THING!", white)
 			banner(r, 72, fmt.tprintf("%s TO START", cm.action_label(g.input_map, .Green)), white)
+			banner(r, 88, "ARROWS OR THE PAD TO MOVE", white)
+			banner(r, 100, "SAVES ITSELF", white)
 		}
 	}
 	draw_pad(g, r)

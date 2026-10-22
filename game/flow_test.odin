@@ -221,3 +221,28 @@ test_red_starts_a_run_from_any_shop_row :: proc(t: ^testing.T) {
 	handle_command(g, .Red)
 	testing.expect_value(t, g.state, State.Playing)
 }
+
+@(test)
+test_the_shop_says_new_best_and_shows_progress_toward_the_first_gem :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	g.score = 10
+	finish_run(g)
+	testing.expect(t, g.new_best)
+	g.state = .Playing
+	g.score = 5
+	finish_run(g)
+	testing.expect(t, !g.new_best) // 5 does not beat 10
+	g.progress.era_earned = 340
+	_, _, cost := shop_row_text(g, SHOP_ROWS - 1)
+	testing.expect_value(t, cost, "ERA 340/1000")
+	g.progress.era_earned = 1000
+	testing.expect_value(t, row_what(g, SHOP_ROWS - 1), "NEXT GEM AT 4000 ERA COINS")
+}
+
+@(test)
+test_the_prestige_prompt_fits_the_screen :: proc(t: ^testing.T) {
+	text := "PRESS AGAIN: +999 GEMS, COINS AND UPGRADES RESET"
+	testing.expect(t, 14 + cm.text_width(text) <= cm.SCREEN_W)
+	testing.expect(t, len(text) <= 64)
+}

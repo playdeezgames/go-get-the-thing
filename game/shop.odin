@@ -62,6 +62,11 @@ TIME_BONUS_CAP_BASE :: 4
 TIME_BONUS_CAP_PER_LEVEL :: 2
 GEM_ERA_DIVISOR :: 1000 // gems = the square root of (coins earned since the last prestige / this)
 
+// The era coins at which the player would have `gain` + 1 gems.
+next_gem_at :: proc(gain: int) -> int {
+	return (gain + 1) * (gain + 1) * GEM_ERA_DIVISOR
+}
+
 HELPER_BASE_STEP_MS :: 600
 HELPER_STEP_GAIN_MS :: 60
 PLAYER_BASE_STEP_MS :: 250

@@ -41,10 +41,42 @@ helper_step :: proc(g: ^Game, ci: int) {
 	}
 }
 
+// The Thing a helper should aim for: helpers take the Things in turn, each the nearest one (straight
+// line) that no earlier helper has taken, so they do not all crowd onto the same one. -1 when the
+// character is not a helper, or every Thing is taken (then it aims for the nearest as before).
+helper_target :: proc(g: ^Game, ci: int) -> int {
+	n := min(helper_count(g.progress), g.helper_n)
+	taken: [MAX_THINGS]bool
+	for i in 0 ..< n {
+		hp := rt.play_position(&g.play, g.helpers[i])
+		if !hp.placed {
+			continue
+		}
+		best, best_d := -1, 0
+		for k in 0 ..< g.thing_n {
+			tp := rt.play_position(&g.play, g.things[k])
+			if taken[k] || !tp.placed {
+				continue
+			}
+			if d := abs(tp.x - hp.x) + abs(tp.y - hp.y); best < 0 || d < best_d {
+				best, best_d = k, d
+			}
+		}
+		if best >= 0 {
+			taken[best] = true
+		}
+		if g.helpers[i] == ci {
+			return best >= 0 ? g.things[best] : -1
+		}
+	}
+	return -1
+}
+
 // The first step (dx, dy) of a shortest walk from the character to the nearest Thing over cells that
 // are not solid and not held by another character (a Thing's cell is the goal, so it is allowed).
 // Breadth first with a fixed neighbour order, so the same world gives the same walk.
 step_towards_nearest_thing :: proc(g: ^Game, ci: int) -> (dx, dy: int, ok: bool) {
+	target := helper_target(g, ci)
 	cols, rows, _ := rt.map_size(g.world, g.map_index)
 	cells := cols * rows
 	blocked := make([]bool, cells, context.temp_allocator)
@@ -61,7 +93,7 @@ step_towards_nearest_thing :: proc(g: ^Game, ci: int) -> (dx, dy: int, ok: bool)
 			continue
 		}
 		if rt.character_has_tag(g.world, other, g.thing_tag) {
-			goal[i] = true
+			goal[i] = target < 0 || other == target // another helper's Thing is passed, not aimed at
 		} else {
 			blocked[i] = true
 		}

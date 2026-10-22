@@ -86,6 +86,7 @@ prestige_pressed :: proc(g: ^Game, armed: bool) {
 	}
 	gained := prestige(&g.progress)
 	g.last_run = 0
+	g.new_best = false
 	play(g, g.prestige_pcm)
 	request_save(g)
 	sayf(g, "PRESTIGED: +%d GEMS", gained)
@@ -119,7 +120,11 @@ shop_row_text :: proc(g: ^Game, row: int) -> (name, level, cost: string) {
 		cost = have >= PERKS[k].max_level ? "MAX" : fmt.tprintf("%d GEMS", next_perk_cost(g.progress, k))
 		return PERKS[k].name, fmt.tprintf("LV %d/%d", have, PERKS[k].max_level), cost
 	case .Prestige:
-		return "PRESTIGE", "", fmt.tprintf("+%d GEMS", gems_for_prestige(g.progress.era_earned))
+		gain := gems_for_prestige(g.progress.era_earned)
+		if gain == 0 {
+			return "PRESTIGE", "", fmt.tprintf("ERA %d/%d", g.progress.era_earned, next_gem_at(0))
+		}
+		return "PRESTIGE", "", fmt.tprintf("+%d GEMS", gain)
 	}
 	return "", "", ""
 }
@@ -146,13 +151,22 @@ row_what :: proc(g: ^Game, row: int) -> string {
 	kind, index := row_kind(row)
 	switch kind {
 	case .Start:
-		return "START THE NEXT RUN"
+		for other in 1 ..< SHOP_ROWS - 1 {
+			if row_affordable(g, other) {
+				return "START THE NEXT RUN"
+			}
+		}
+		return "NOTHING TO BUY YET: START A RUN"
 	case .Upgrade:
 		return UPGRADES[Upgrade(index)].what
 	case .Perk:
 		return PERKS[Perk(index)].what
 	case .Prestige:
-		return "TRADE COINS AND UPGRADES FOR GEMS"
+		gain := gems_for_prestige(g.progress.era_earned)
+		if gain == 0 {
+			return "ERA COINS TOWARD YOUR FIRST GEM"
+		}
+		return fmt.tprintf("NEXT GEM AT %d ERA COINS", next_gem_at(gain))
 	}
 	return ""
 }
@@ -162,7 +176,11 @@ draw_shop :: proc(g: ^Game, r: ^cm.Renderer) {
 	cm.draw_text(r, 8, 4, "SHOP", gold)
 	coins := fmt.tprintf("COINS %d", g.progress.coins)
 	cm.draw_text(r, cm.SCREEN_W - 8 - cm.text_width(coins), 4, coins, white)
-	cm.draw_text(r, 8, 14, fmt.tprintf("LAST RUN +%d   BEST %d", g.last_run, g.progress.best_run), grey)
+	if g.new_best {
+		cm.draw_text(r, 8, 14, fmt.tprintf("NEW BEST! +%d", g.last_run), gold)
+	} else {
+		cm.draw_text(r, 8, 14, fmt.tprintf("LAST RUN +%d   BEST %d", g.last_run, g.progress.best_run), grey)
+	}
 	gems := fmt.tprintf("GEMS %d", g.progress.gems)
 	cm.draw_text(r, cm.SCREEN_W - 8 - cm.text_width(gems), 14, gems, cm.Color{120, 220, 255})
 	for row in 0 ..< SHOP_ROWS {

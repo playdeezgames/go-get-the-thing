@@ -182,3 +182,15 @@ test_a_long_frame_does_not_make_a_helper_run_a_marathon :: proc(t: ^testing.T) {
 	update(g, 10_000) // far longer than a real frame (the frontends clamp to 100 ms)
 	testing.expect(t, distance(where_is(g, h), [2]int{1, 8}) <= MAX_HELPER_STEPS_PER_FRAME + 1)
 }
+
+@(test)
+test_two_helpers_aim_for_different_things :: proc(t: ^testing.T) {
+	g := run_with(2, 0, 1)
+	defer finish(g)
+	a, b := g.things[0], g.things[1]
+	testing.expect(t, placed(g, a) && placed(g, b))
+	t0 := helper_target(g, g.helpers[0])
+	t1 := helper_target(g, g.helpers[1])
+	testing.expect(t, t0 >= 0 && t1 >= 0)
+	testing.expect(t, t0 != t1)
+}

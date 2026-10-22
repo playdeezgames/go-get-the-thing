@@ -26,6 +26,7 @@ start_run :: proc(g: ^Game) {
 finish_run :: proc(g: ^Game) {
 	g.progress.coins = min(g.progress.coins + g.score, MAX_SAVED_NUMBER)
 	g.progress.era_earned = min(g.progress.era_earned + g.score, MAX_SAVED_NUMBER)
+	g.new_best = g.score > g.progress.best_run
 	g.progress.best_run = max(g.progress.best_run, g.score)
 	g.last_run = g.score
 	g.has_queued = false
