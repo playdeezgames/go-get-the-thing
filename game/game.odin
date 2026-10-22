@@ -48,11 +48,15 @@ Game :: struct {
 	holding:    bool, // a pad button is held with the mouse
 	held:       cm.Action,
 	repeat_ms:  f64, // until the held direction repeats
+	progress:   Progress, // kept between runs (see save.odin)
+	load_requested: bool, // the save is asked for once, at start
+	save_requested: bool,
 }
 
 // Loads the embedded world and checks it has what the game needs. On failure `error` says why.
 init :: proc(g: ^Game) {
 	g^ = {}
+	g.load_requested = true
 	g.world = rt.new_world()
 	if err := rt.load(g.world, WORLD_FILE); err != "" {
 		g.error = fmt.aprintf("WORLD: %s", err)
@@ -219,6 +223,37 @@ take_audio :: proc(g: ^Game) -> (req: cm.Audio_Request, ok: bool) {
 	copy(g.audio[:], g.audio[1:g.audio_n])
 	g.audio_n -= 1
 	return req, true
+}
+
+// --- saving: the Tool's file hooks (the frontends do the file IO) ----------------------------------
+
+// True once, at start: the frontend then reads the save file, if there is one, and calls `load_save`.
+wants_load :: proc(g: ^Game) -> bool {
+	asked := g.load_requested
+	g.load_requested = false
+	return asked
+}
+
+// A save file's bytes. A bad file is refused and changes nothing.
+load_save :: proc(g: ^Game, bytes: []u8) -> bool {
+	p, ok := progress_from_json(bytes)
+	if ok {
+		g.progress = p
+	}
+	return ok
+}
+
+request_save :: proc(g: ^Game) {
+	g.save_requested = true
+}
+
+// The save text if one was asked for since the last call (on the temp allocator).
+take_save :: proc(g: ^Game) -> (text: string, ok: bool) {
+	if !g.save_requested {
+		return "", false
+	}
+	g.save_requested = false
+	return progress_to_json(g.progress), true
 }
 
 // Called every frame with the elapsed milliseconds (the frontends clamp it).

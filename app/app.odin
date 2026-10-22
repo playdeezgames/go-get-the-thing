@@ -13,6 +13,11 @@ make_tool :: proc() -> cm.Tool {
 	return cm.Tool {
 		title = "Go Get the Thing!",
 		data = &g,
+		default_file = game.SAVE_FILE,
+		take_save = proc(data: rawptr) -> (string, bool) {return game.take_save((^game.Game)(data))},
+		saved = proc(data: rawptr) {},
+		wants_load = proc(data: rawptr) -> bool {return game.wants_load((^game.Game)(data))},
+		load = proc(data: rawptr, bytes: []u8) -> bool {return game.load_save((^game.Game)(data), bytes)},
 		set_input_map = proc(data: rawptr, m: ^cm.Input_Map) {(^game.Game)(data).input_map = m},
 		handle_event = proc(data: rawptr, ev: cm.Input_Event) {
 			g := (^game.Game)(data)
