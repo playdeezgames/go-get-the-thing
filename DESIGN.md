@@ -50,3 +50,34 @@ Tag effective values: a character type or terrain has a tag or not; a character 
 
 - **Play mode does not show `spawn` cells**: check them on the map editor's cell Tags screen.
 - Tag names `thing` and `spawn` remain a convention, now enforced by `game_tags.json` and `rt.required_missing`.
+
+## Pivot: an incremental game (decided October 22, 2026)
+
+The plain "collect for points" round is not much of a game, so it becomes an incremental one. The room, sprites, sounds, pad, HUD and the reachability check stay; what changes is what the score is for.
+
+**Loop.** A *run* is the timed round we have: walk onto the Thing, earn coins, the clock runs out. Coins are a currency that is kept. Between runs a **shop** screen spends them on permanent upgrades, then the next run starts. Upgrades bring in helpers that collect for you, so play moves from steering to buying ("walk and collect, then automate").
+
+**Upgrades** (each has a level and a cost that grows with it; start with these five, tune in play):
+
+| Upgrade | Effect |
+|---|---|
+| Thing value | more coins per Thing |
+| Run length | more seconds per run |
+| Helpers | up to N helper characters that walk to the nearest Thing and pick it up |
+| Helper speed | helpers step faster |
+| More Things | up to M Things in the room at once |
+| Player speed | the player may step faster (the base rate is limited so this matters) |
+
+**State.** Title -> Run -> Shop -> Run -> ... (a run ends at zero; the shop shows the coins just earned and the total). Saved: coins, upgrade levels, best run.
+
+**Authoring in the Anvil** (no Anvil change needed): a `helper` character type with a sprite and N `helper` characters that stand nowhere until bought; M `thing` characters (already tagged `thing`) that stand nowhere until the game places them; a `buy` sound; the existing `pickup` and `game_over` sounds. The game places and removes characters only through `Play_State`. Tuning numbers (base run seconds, costs) can move into world parameters later.
+
+**Game structure.**
+- `game/shop.odin`: the upgrade table, cost and effect functions (pure, tested), buying.
+- `game/helpers.odin`: a breadth-first path step toward the nearest Thing over non-solid cells (extends `reach.odin`), one step each time a helper's clock fires; helpers block each other (the runtime refuses an occupied cell) and wait.
+- `game/save.odin`: the save model <-> JSON (`core:encoding/json`, spec JSON, integers only; reject bad values), with tests. The Tool's `take_save`/`saved`/`wants_load`/`load` hooks, file `save.json`. Saved after every purchase and at the end of each run; loaded once at start.
+- The shop is a list driven by up/down/green (and the on-screen pad), red leaves for the next run; every screen is reachable with keyboard, gamepad and mouse.
+
+**Needed from the Anvil.** Native saving already works (the frontend writes the file in the working directory). The web frontend downloads a file on every save, which is wrong for an autosave: see the Anvil's `USER_STORIES.md` story 13. Until then the web build would save only by download; native is the target for this step.
+
+**Order of work.** (1) Author helper characters, extra Things and the `buy` sound in the Anvil. (2) Upgrade model, costs, save/load with tests. (3) Run/Shop state machine and shop screen. (4) Helpers. (5) Balance by playing, then web.
