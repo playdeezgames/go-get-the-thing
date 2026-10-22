@@ -15,7 +15,7 @@ Row_Kind :: enum {
 // Row 0 starts a run, then one row per upgrade, one per perk, and last PRESTIGE.
 SHOP_ROWS :: 1 + len(Upgrade) + len(Perk) + 1
 SHOP_TOP_Y :: 26
-SHOP_ROW_H :: 11
+SHOP_ROW_H :: 10
 SHOP_WHAT_Y :: 134
 SHOP_MESSAGE_Y :: 146
 SHOP_LEVEL_X :: 150

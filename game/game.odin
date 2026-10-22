@@ -77,7 +77,7 @@ Game :: struct {
 	message_buf: [64]u8,
 	message_ms: f64,
 	prestige_armed: bool, // the PRESTIGE row was pressed once and waits for a second press
-	time_bonuses: int, // how many time bonuses this run has had (limited by MAX_TIME_BONUSES_PER_RUN)
+	time_bonuses: int, // how many time bonuses this run has had (limited by time_bonus_cap)
 	bonus_flash_ms: f64, // the HUD shows "+5 SEC" until this runs out
 }
 
