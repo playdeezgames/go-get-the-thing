@@ -42,9 +42,9 @@ test_buying_in_the_shop_spends_coins_plays_a_sound_and_asks_for_a_save :: proc(t
 	g.progress.coins = 15
 	in_shop(g)
 	take_save(g) // the run-less start asked for nothing yet
-	handle_command(g, .Down) // THING VALUE costs 12
+	handle_command(g, .Down) // THING VALUE costs 8
 	handle_command(g, .Green)
-	testing.expect_value(t, g.progress.coins, 3)
+	testing.expect_value(t, g.progress.coins, 7)
 	testing.expect_value(t, g.progress.levels[.Thing_Value], 1)
 	testing.expect_value(t, g.message, "BOUGHT")
 	req, ok := take_audio(g)

@@ -6,9 +6,9 @@ import "core:testing"
 
 @(test)
 test_an_upgrade_costs_its_base_at_level_zero_and_more_each_level :: proc(t: ^testing.T) {
-	testing.expect_value(t, upgrade_cost(.Thing_Value, 0), 12)
-	testing.expect_value(t, upgrade_cost(.Thing_Value, 1), 20) // 12 * 160% + 1
-	testing.expect_value(t, upgrade_cost(.Thing_Value, 2), 33)
+	testing.expect_value(t, upgrade_cost(.Thing_Value, 0), 8)
+	testing.expect_value(t, upgrade_cost(.Thing_Value, 1), 13) // 8 * 160%, rounded
+	testing.expect_value(t, upgrade_cost(.Thing_Value, 2), 21)
 	for u in Upgrade {
 		testing.expect_value(t, upgrade_cost(u, 0), UPGRADES[u].base_cost)
 		for level in 1 ..< UPGRADES[u].max_level {
@@ -20,13 +20,13 @@ test_an_upgrade_costs_its_base_at_level_zero_and_more_each_level :: proc(t: ^tes
 @(test)
 test_buying_spends_coins_and_raises_the_level :: proc(t: ^testing.T) {
 	p := Progress{coins = 40}
-	testing.expect_value(t, buy(&p, .Thing_Value), Buy_Result.Bought) // 12
-	testing.expect_value(t, p.coins, 28)
+	testing.expect_value(t, buy(&p, .Thing_Value), Buy_Result.Bought) // 8
+	testing.expect_value(t, p.coins, 32)
 	testing.expect_value(t, p.levels[.Thing_Value], 1)
-	testing.expect_value(t, buy(&p, .Thing_Value), Buy_Result.Bought) // 20 of the 28
-	testing.expect_value(t, p.coins, 8)
-	testing.expect_value(t, buy(&p, .Thing_Value), Buy_Result.Too_Poor) // 33
-	testing.expect_value(t, p.coins, 8) // a refusal changes nothing
+	testing.expect_value(t, buy(&p, .Thing_Value), Buy_Result.Bought) // 13 of the 32
+	testing.expect_value(t, p.coins, 19)
+	testing.expect_value(t, buy(&p, .Thing_Value), Buy_Result.Too_Poor) // 21
+	testing.expect_value(t, p.coins, 19) // a refusal changes nothing
 	testing.expect_value(t, p.levels[.Thing_Value], 2)
 }
 

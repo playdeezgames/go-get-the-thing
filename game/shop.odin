@@ -23,9 +23,9 @@ Upgrade_Info :: struct {
 }
 
 UPGRADES := [Upgrade]Upgrade_Info {
-	.Thing_Value = {"thing_value", "THING VALUE", "+1 COIN PER THING", 12, 160, 20},
+	.Thing_Value = {"thing_value", "THING VALUE", "+1 COIN PER THING", 8, 160, 20},
 	.Run_Length = {"run_length", "RUN LENGTH", "+5 SECONDS PER RUN", 60, 210, 12},
-	.Helpers = {"helpers", "HELPERS", "A HELPER COLLECTS FOR YOU", 250, 320, 4},
+	.Helpers = {"helpers", "HELPERS", "A HELPER COLLECTS FOR YOU", 150, 320, 4},
 	.Helper_Speed = {"helper_speed", "HELPER SPEED", "HELPERS STEP FASTER", 150, 210, 8},
 	.More_Things = {"more_things", "MORE THINGS", "ONE MORE THING IN THE ROOM", 400, 350, 3},
 	.Player_Speed = {"player_speed", "PLAYER SPEED", "YOU STEP FASTER", 80, 200, 8},
