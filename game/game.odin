@@ -18,7 +18,9 @@ SOUND_PICKUP :: "pickup"
 SOUND_GAME_OVER :: "game_over"
 SOUND_BUY :: "buy"
 MAX_THINGS :: 4
+MAX_HELPERS :: 4
 CHANNEL_EFFECTS :: 0 // a new effect replaces the one still playing
+CHANNEL_HELPERS :: 1 // helpers pick up on their own channel, so they do not cut off the player's sound
 
 // Title -> Shop -> Playing (a run) -> Shop -> Playing ...
 State :: enum {
@@ -36,6 +38,9 @@ Game :: struct {
 	thing:      int, // the first Thing (things[0])
 	things:     [MAX_THINGS]int, // every character tagged `thing`, in world order
 	thing_n:    int,
+	helpers:    [MAX_HELPERS]int, // every character of the type `helper`, in world order
+	helper_n:   int,
+	helper_clock: [MAX_HELPERS]f64, // until each helper steps again
 	thing_tag:  int,
 	spawn_tag:  int,
 	error:      string, // set when start-up failed: shown instead of the game
@@ -123,6 +128,20 @@ init :: proc(g: ^Game) {
 		return
 	}
 	g.thing = g.things[0]
+	for ci in 0 ..< rt.character_count(g.world) {
+		if ct := rt.character_type(g.world, ci); ct != nil && cm.name_str(&ct.name) == "helper" && g.helper_n < MAX_HELPERS {
+			g.helpers[g.helper_n] = ci
+			g.helper_n += 1
+		}
+	}
+	if need := UPGRADES[.Helpers].max_level; g.helper_n < need {
+		g.error = fmt.aprintf("WORLD NEEDS %d HELPERS", need)
+		return
+	}
+	if need := 1 + UPGRADES[.More_Things].max_level; g.thing_n < need {
+		g.error = fmt.aprintf("WORLD NEEDS %d THINGS", need)
+		return
+	}
 	g.round_ms = f64(max(rt.param_number(g.world, "round_seconds", DEFAULT_ROUND_SECONDS), 1)) * 1000
 	g.points_per_thing = rt.param_number(g.world, "points_per_thing", DEFAULT_POINTS_PER_THING)
 	g.ms_left = g.round_ms
@@ -147,9 +166,9 @@ random_below :: proc(g: ^Game, n: int) -> int {
 }
 
 // Queues a sound effect for the frontend (dropped if the queue is full).
-play :: proc(g: ^Game, samples: []i16) {
+play :: proc(g: ^Game, samples: []i16, channel := CHANNEL_EFFECTS) {
 	if g.audio_n < len(g.audio) {
-		g.audio[g.audio_n] = {action = .Play, channel = CHANNEL_EFFECTS, samples = samples, rate = cm.SOUND_RATE}
+		g.audio[g.audio_n] = {action = .Play, channel = channel, samples = samples, rate = cm.SOUND_RATE}
 		g.audio_n += 1
 	}
 }
@@ -207,6 +226,7 @@ update :: proc(g: ^Game, dt_ms: f64) {
 	if g.state != .Playing {
 		return
 	}
+	run_helpers(g, dt_ms)
 	g.ms_left -= dt_ms
 	if g.ms_left <= 0 {
 		g.ms_left = 0
