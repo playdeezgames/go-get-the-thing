@@ -12,6 +12,8 @@ start_run :: proc(g: ^Game) {
 	g.score = 0
 	g.ms_left = run_ms(g.progress, g.round_ms)
 	g.step_cooldown_ms = 0
+	g.time_bonuses = 0
+	g.bonus_flash_ms = 0
 	g.state = .Playing
 	for i in 1 ..< min(thing_count(g.progress), g.thing_n) {
 		place_on_free_cell(g, g.things[i])
@@ -22,6 +24,7 @@ start_run :: proc(g: ^Game) {
 // The clock ran out: bank the coins, remember the best run, save, and go to the shop.
 finish_run :: proc(g: ^Game) {
 	g.progress.coins = min(g.progress.coins + g.score, MAX_SAVED_NUMBER)
+	g.progress.era_earned = min(g.progress.era_earned + g.score, MAX_SAVED_NUMBER)
 	g.progress.best_run = max(g.progress.best_run, g.score)
 	g.last_run = g.score
 	request_save(g)
@@ -85,6 +88,7 @@ step_collecting :: proc(g: ^Game, ci, dx, dy, sound_channel: int) -> rt.Move_Res
 		if who := rt.play_character_at(&g.play, g.map_index, tx, ty); who >= 0 && rt.character_has_tag(g.world, who, g.thing_tag) {
 			g.score += coins_per_thing(g.progress, g.points_per_thing)
 			play(g, g.pickup_pcm, sound_channel)
+			roll_secondary_effect(g)
 			rt.play_unplace(&g.play, who)
 			result = rt.play_step(&g.play, g.world, ci, dx, dy)
 			place_on_free_cell(g, who)
@@ -116,4 +120,18 @@ place_on_free_cell :: proc(g: ^Game, thing: int) -> bool {
 	}
 	c := free_cells[random_below(g, len(free_cells))]
 	return rt.play_place(&g.play, g.world, thing, g.map_index, c.x, c.y) == .Placed
+}
+
+// A picked-up Thing may carry a secondary effect, by chance (a perk bought with gems). For now the
+// only one adds time to the clock, at most MAX_TIME_BONUSES_PER_RUN times a run. The dice are not
+// rolled at all with no chance, so a game without the perk draws the same numbers as before.
+roll_secondary_effect :: proc(g: ^Game) {
+	chance := time_chance_pct(g.progress)
+	if chance == 0 || g.time_bonuses >= MAX_TIME_BONUSES_PER_RUN || random_below(g, 100) >= chance {
+		return
+	}
+	g.ms_left += TIME_BONUS_MS
+	g.time_bonuses += 1
+	g.bonus_flash_ms = BONUS_FLASH_MS
+	play(g, g.bonus_pcm, CHANNEL_BONUS)
 }

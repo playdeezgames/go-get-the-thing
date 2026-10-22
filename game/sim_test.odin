@@ -14,10 +14,20 @@ SIM_MAX_RUNS :: 1200
 
 Sim_Run :: struct {
 	earned:    int,
+	era_earned: int, // the era's total after this run
 	run_s:     f64,
 	coins_after_shop: int,
 	bought:    [dynamic]Upgrade,
 	levels:    [Upgrade]int,
+}
+
+Sim_Era :: struct {
+	run:       int, // the run after which the player prestiged
+	minutes:   f64, // total play time at that point
+	gained:    int,
+	era_earned: int,
+	last_earned: int, // what the last run before the prestige earned
+	perk_level: int, // the time-chance level after spending the gems
 }
 
 Sim :: struct {
@@ -25,13 +35,14 @@ Sim :: struct {
 	first_buy:   [Upgrade]int, // the run (1-based) after which the first level was bought, 0 = never
 	maxed_at:    [Upgrade]int,
 	all_maxed_at: int,
+	eras:        [dynamic]Sim_Era, // one per prestige
 	total_game_s: f64,
 }
 
 // Plays runs until everything is maxed (or SIM_MAX_RUNS). The player is a bot that walks to the
 // nearest Thing as fast as the player-speed upgrade allows; with `afk_with_helpers` > 0 it stops
 // playing once it owns that many helpers and leaves the earning to them.
-simulate :: proc(seed: u64, afk_with_helpers: int) -> Sim {
+simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_prestiges := 0) -> Sim {
 	g := new(Game)
 	defer {destroy(g); free(g)}
 	init(g)
@@ -50,7 +61,7 @@ simulate :: proc(seed: u64, afk_with_helpers: int) -> Sim {
 			update(g, SIM_FRAME_MS)
 			free_all(context.temp_allocator)
 		}
-		r := Sim_Run{earned = g.last_run, run_s = run_s}
+		r := Sim_Run{earned = g.last_run, run_s = run_s, era_earned = g.progress.era_earned}
 		// shopping: always the cheapest upgrade that is not maxed, while it can be paid
 		for {
 			cheapest, found := Upgrade.Thing_Value, false
@@ -70,11 +81,20 @@ simulate :: proc(seed: u64, afk_with_helpers: int) -> Sim {
 				sim.maxed_at[cheapest] = run
 			}
 		}
+		if prestige_at > 0 && gems_for_prestige(g.progress.era_earned) >= prestige_at {
+			earned := g.progress.era_earned
+			gained := prestige(&g.progress)
+			for buy_perk(&g.progress, .Time_Chance) == .Bought {}
+			append(&sim.eras, Sim_Era{run, sim.total_game_s / 60 + run_s / 60, gained, earned, r.earned, g.progress.perks[.Time_Chance]})
+		}
 		r.coins_after_shop = g.progress.coins
 		r.levels = g.progress.levels
 		append(&sim.runs, r)
 		sim.total_game_s += run_s
-		done := true
+		if stop_after_prestiges > 0 && len(sim.eras) >= stop_after_prestiges {
+			break
+		}
+		done := prestige_at == 0
 		for u in Upgrade {
 			done &&= g.progress.levels[u] >= UPGRADES[u].max_level
 		}
@@ -89,7 +109,7 @@ simulate :: proc(seed: u64, afk_with_helpers: int) -> Sim {
 report :: proc(title: string, sim: Sim, table: bool) {
 	fmt.printfln("\n=== %s ===", title)
 	if table {
-		fmt.println("run  earned  secs  bought this shop (levels after: TV RL HP HS MT PS)")
+		fmt.println("run  earned  secs  bought this shop (levels after: TV RL HP HS MT PS)  [era earned -> gems]")
 		for r, i in sim.runs {
 			if i < 6 || i % 5 == 0 || i == len(sim.runs) - 1 {
 				names := ""
@@ -97,10 +117,10 @@ report :: proc(title: string, sim: Sim, table: bool) {
 					names = fmt.tprintf("%s %s", names, UPGRADES[b].name)
 				}
 				fmt.printfln(
-					"%3d  %6d  %4.0f  [%d %d %d %d %d %d]%s",
+					"%3d  %6d  %4.0f  [%d %d %d %d %d %d]  [%d -> %d gems]%s",
 					i + 1, r.earned, r.run_s,
 					r.levels[.Thing_Value], r.levels[.Run_Length], r.levels[.Helpers], r.levels[.Helper_Speed], r.levels[.More_Things], r.levels[.Player_Speed],
-					names,
+					r.era_earned, gems_for_prestige(r.era_earned), names,
 				)
 			}
 		}
@@ -111,6 +131,10 @@ report :: proc(title: string, sim: Sim, table: bool) {
 		}
 		delete(sim.runs)
 	}
+	for e, i in sim.eras {
+		fmt.printfln("  prestige %d after run %d (%.0f min): era earned %d, last run %d, +%d gems, time-chance level %d", i + 1, e.run, e.minutes, e.era_earned, e.last_earned, e.gained, e.perk_level)
+	}
+	defer delete(sim.eras)
 	first, last := sim.runs[0], sim.runs[len(sim.runs) - 1]
 	fmt.printfln("first run earned %d, last run earned %d (%.1fx)", first.earned, last.earned, f64(last.earned) / f64(max(first.earned, 1)))
 	if sim.all_maxed_at > 0 {
@@ -142,7 +166,8 @@ test_balance_report :: proc(t: ^testing.T) {
 		}
 		fmt.printfln("  %-13s %7d  (level 1 costs %d, last costs %d)", UPGRADES[u].name, sum, upgrade_cost(u, 0), upgrade_cost(u, UPGRADES[u].max_level - 1))
 	}
-	report("player plays every run, helpers help", simulate(1, 0), true)
-	report("player goes AFK once 2 helpers are bought", simulate(1, 2), false)
+	for at in ([?]int{5, 10}) {
+		report(fmt.aprintf("prestige as soon as it is worth %d gems, 5 times", at), simulate(1, 0, at, 5), false)
+	}
 	_ = cm.SCREEN_W
 }

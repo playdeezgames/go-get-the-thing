@@ -12,12 +12,14 @@ HUD_LABEL :: cm.Color{170, 170, 170}
 HUD_INK :: cm.Color{255, 255, 255}
 HUD_ALERT :: cm.Color{255, 85, 85}
 HUD_ALERT_MS :: 5000.0
+HUD_BONUS :: cm.Color{85, 255, 85}
 
 // Two label/value pairs. In a run: the coins earned so far and the clock. Otherwise: the coins you
 // have and your best run. (On the temp allocator.)
 hud_text :: proc(g: ^Game) -> (left_label, left_value, right_label, right_value: string) {
 	if g.state == .Playing {
-		return "COINS", fmt.tprintf("%d", g.score), "TIME", fmt.tprintf("%d", seconds_left(g))
+		label := g.bonus_flash_ms > 0 ? fmt.tprintf("+%d SEC", TIME_BONUS_MS / 1000) : "TIME"
+		return "COINS", fmt.tprintf("%d", g.score), label, fmt.tprintf("%d", seconds_left(g))
 	}
 	return "COINS", fmt.tprintf("%d", g.progress.coins), "BEST", fmt.tprintf("%d", g.progress.best_run)
 }
@@ -31,7 +33,7 @@ draw_hud :: proc(g: ^Game, r: ^cm.Renderer) {
 	left_label, left_value, right_label, right_value := hud_text(g)
 	centred(r, HUD_LEFT, HUD_TOP_Y, left_label, HUD_LABEL)
 	centred(r, HUD_LEFT, HUD_BOTTOM_Y, left_value, HUD_INK)
-	centred(r, HUD_RIGHT, HUD_TOP_Y, right_label, HUD_LABEL)
+	centred(r, HUD_RIGHT, HUD_TOP_Y, right_label, g.bonus_flash_ms > 0 && g.state == .Playing ? HUD_BONUS : HUD_LABEL)
 	centred(r, HUD_RIGHT, HUD_BOTTOM_Y, right_value, time_colour(g))
 }
 

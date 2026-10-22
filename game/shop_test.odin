@@ -94,3 +94,60 @@ test_the_prices_keep_the_pace_the_simulation_found :: proc(t: ^testing.T) {
 	testing.expect(t, cheapest <= 15)
 	testing.expect(t, total >= 500_000)
 }
+
+@(test)
+test_gems_come_from_the_square_root_of_the_eras_earnings :: proc(t: ^testing.T) {
+	testing.expect_value(t, gems_for_prestige(0), 0)
+	testing.expect_value(t, gems_for_prestige(GEM_ERA_DIVISOR - 1), 0)
+	testing.expect_value(t, gems_for_prestige(GEM_ERA_DIVISOR), 1)
+	testing.expect_value(t, gems_for_prestige(4 * GEM_ERA_DIVISOR - 1), 1)
+	testing.expect_value(t, gems_for_prestige(4 * GEM_ERA_DIVISOR), 2)
+	testing.expect_value(t, gems_for_prestige(100 * GEM_ERA_DIVISOR), 10)
+	last := 0
+	for era := 0; era < 400 * GEM_ERA_DIVISOR; era += GEM_ERA_DIVISOR / 3 {
+		g := gems_for_prestige(era)
+		testing.expect(t, g >= last) // never fewer for earning more
+		last = g
+	}
+}
+
+@(test)
+test_prestige_resets_the_era_and_keeps_gems_perks_and_the_best_run :: proc(t: ^testing.T) {
+	p := Progress{coins = 500, best_run = 99, era_earned = 9 * GEM_ERA_DIVISOR, gems = 4, prestiges = 1}
+	p.levels[.Helpers], p.levels[.Thing_Value] = 3, 7
+	p.perks[.Time_Chance] = 2
+	testing.expect_value(t, prestige(&p), 3)
+	testing.expect_value(t, p.gems, 7)
+	testing.expect_value(t, p.prestiges, 2)
+	testing.expect_value(t, p.coins, 0)
+	testing.expect_value(t, p.era_earned, 0)
+	testing.expect_value(t, p.levels, [Upgrade]int{})
+	testing.expect_value(t, p.best_run, 99)
+	testing.expect_value(t, p.perks[.Time_Chance], 2)
+}
+
+@(test)
+test_prestige_needs_a_gems_worth_of_earnings_and_otherwise_changes_nothing :: proc(t: ^testing.T) {
+	p := Progress{coins = 500, era_earned = GEM_ERA_DIVISOR - 1}
+	p.levels[.Helpers] = 3
+	before := p
+	testing.expect_value(t, prestige(&p), 0)
+	testing.expect_value(t, p, before)
+}
+
+@(test)
+test_perks_cost_gems_and_stop_at_their_maximum :: proc(t: ^testing.T) {
+	p := Progress{gems = 2}
+	testing.expect_value(t, perk_cost(.Time_Chance, 0), 2)
+	testing.expect_value(t, buy_perk(&p, .Time_Chance), Buy_Result.Bought)
+	testing.expect_value(t, p.gems, 0)
+	testing.expect_value(t, time_chance_pct(p), TIME_CHANCE_PCT_PER_LEVEL)
+	testing.expect_value(t, buy_perk(&p, .Time_Chance), Buy_Result.Too_Poor) // the next costs 4
+	testing.expect_value(t, p.perks[.Time_Chance], 1)
+	p = Progress{gems = 1_000_000}
+	for _ in 0 ..< PERKS[.Time_Chance].max_level {
+		testing.expect_value(t, buy_perk(&p, .Time_Chance), Buy_Result.Bought)
+	}
+	testing.expect_value(t, buy_perk(&p, .Time_Chance), Buy_Result.Max_Level)
+	testing.expect(t, time_chance_pct(p) <= 100)
+}

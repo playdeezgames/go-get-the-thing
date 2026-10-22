@@ -8,6 +8,8 @@ import "core:testing"
 test_progress_survives_a_save_and_load :: proc(t: ^testing.T) {
 	p := Progress{coins = 1234, best_run = 56}
 	p.levels[.Thing_Value], p.levels[.Helpers], p.levels[.Player_Speed] = 3, 2, 8
+	p.era_earned, p.gems, p.prestiges = 4321, 7, 2
+	p.perks[.Time_Chance] = 3
 	text := progress_to_json(p)
 	back, ok := progress_from_json(transmute([]u8)text)
 	testing.expect(t, ok)
@@ -29,7 +31,13 @@ test_a_bad_save_is_refused :: proc(t: ^testing.T) {
 		`not json`,
 		`[]`,
 		`{"coins": 1}`, // no version
-		`{"version": 2, "coins": 1, "best_run": 0, "levels": {}}`,
+		`{"version": 3, "coins": 1, "best_run": 0, "levels": {}}`, // from a newer game
+		`{"version": 0, "coins": 1, "best_run": 0, "levels": {}}`,
+		`{"version": 2, "coins": 1, "best_run": 0, "gems": -1, "levels": {}}`,
+		`{"version": 2, "coins": 1, "best_run": 0, "era_earned": 1.5, "levels": {}}`,
+		`{"version": 2, "coins": 1, "best_run": 0, "levels": {}, "perks": {"time_chance": 11}}`,
+		`{"version": 2, "coins": 1, "best_run": 0, "levels": {}, "perks": {"made_up": 1}}`,
+		`{"version": 2, "coins": 1, "best_run": 0, "levels": {}, "perks": 4}`,
 		`{"version": 1, "coins": -1, "best_run": 0, "levels": {}}`,
 		`{"version": 1, "coins": 1.5, "best_run": 0, "levels": {}}`,
 		`{"version": 1, "coins": "5", "best_run": 0, "levels": {}}`,
@@ -75,4 +83,14 @@ test_the_tool_asks_for_the_save_once_at_start_and_saves_when_asked :: proc(t: ^t
 	testing.expect(t, strings.contains(text, `"coins": 50`))
 	_, again := take_save(g)
 	testing.expect(t, !again) // one request, one save
+}
+
+@(test)
+test_an_old_version_1_save_still_loads_with_no_gems :: proc(t: ^testing.T) {
+	p, ok := progress_from_json(transmute([]u8)string(`{"version": 1, "coins": 7, "best_run": 2, "levels": {"helpers": 1}}`))
+	testing.expect(t, ok)
+	testing.expect_value(t, p.coins, 7)
+	testing.expect_value(t, p.gems, 0)
+	testing.expect_value(t, p.prestiges, 0)
+	testing.expect_value(t, p.perks[.Time_Chance], 0)
 }

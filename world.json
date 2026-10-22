@@ -171,7 +171,9 @@
   "sounds": [
     {"name": "pickup", "text": "T220 O5 L16 C E G >C8", "loop": false},
     {"name": "game_over", "text": "T160 O4 L8 G E C <G4 C2", "loop": false},
-    {"name": "buy", "text": "T240 O5 L16 E A >C8", "loop": false}
+    {"name": "buy", "text": "T240 O5 L16 E A >C8", "loop": false},
+    {"name": "bonus", "text": "T240 O5 L32 G >C E G8", "loop": false},
+    {"name": "prestige", "text": "T170 O4 L8 C G >C E G4 >C2", "loop": false}
   ],
   "character_types": [
     {"name": "hero", "sprite_set": "actors", "sprite": "hero", "tags": []},

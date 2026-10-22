@@ -17,10 +17,14 @@ DEFAULT_POINTS_PER_THING :: 1
 SOUND_PICKUP :: "pickup"
 SOUND_GAME_OVER :: "game_over"
 SOUND_BUY :: "buy"
+SOUND_BONUS :: "bonus"
+SOUND_PRESTIGE :: "prestige"
 MAX_THINGS :: 4
 MAX_HELPERS :: 4
+BONUS_FLASH_MS :: 1200.0
 CHANNEL_EFFECTS :: 0 // a new effect replaces the one still playing
 CHANNEL_HELPERS :: 1 // helpers pick up on their own channel, so they do not cut off the player's sound
+CHANNEL_BONUS :: 2
 
 // Title -> Shop -> Playing (a run) -> Shop -> Playing ...
 State :: enum {
@@ -55,6 +59,8 @@ Game :: struct {
 	pickup_pcm: []i16, // the sounds, rendered once at start-up (heap), so requests can point at them
 	over_pcm:   []i16,
 	buy_pcm:    []i16,
+	bonus_pcm:  []i16,
+	prestige_pcm: []i16,
 	audio:      [8]cm.Audio_Request, // queued for the frontend, oldest first
 	audio_n:    int,
 	holding:    bool, // a pad button is held with the mouse
@@ -65,8 +71,12 @@ Game :: struct {
 	save_requested: bool,
 	step_cooldown_ms: f64, // until the player may step again (the player-speed upgrade)
 	shop_sel:   int, // the highlighted shop row: 0 = start a run, then the upgrades
-	message:    string, // a short note in the shop (static text), shown until message_ms runs out
+	message:    string, // a short note in the shop (it points into message_buf), shown until message_ms runs out
+	message_buf: [64]u8,
 	message_ms: f64,
+	prestige_armed: bool, // the PRESTIGE row was pressed once and waits for a second press
+	time_bonuses: int, // how many time bonuses this run has had (limited by MAX_TIME_BONUSES_PER_RUN)
+	bonus_flash_ms: f64, // the HUD shows "+5 SEC" until this runs out
 }
 
 // Loads the embedded world and checks it has what the game needs. On failure `error` says why.
@@ -86,7 +96,7 @@ init :: proc(g: ^Game) {
 		g.error = fmt.aprintf("WORLD LACKS TAG %s", missing[0])
 		return
 	}
-	if missing := rt.missing_sounds(g.world, {SOUND_PICKUP, SOUND_GAME_OVER, SOUND_BUY}); len(missing) > 0 {
+	if missing := rt.missing_sounds(g.world, {SOUND_PICKUP, SOUND_GAME_OVER, SOUND_BUY, SOUND_BONUS, SOUND_PRESTIGE}); len(missing) > 0 {
 		g.error = fmt.aprintf("WORLD LACKS SOUND %s", missing[0])
 		return
 	}
@@ -104,6 +114,16 @@ init :: proc(g: ^Game) {
 	buy, _ := rt.find_sound(g.world, SOUND_BUY)
 	if g.buy_pcm, rendered = rt.sound_pcm(g.world, buy, context.allocator); !rendered {
 		g.error = "SOUND buy HAS NO NOTES"
+		return
+	}
+	bonus, _ := rt.find_sound(g.world, SOUND_BONUS)
+	if g.bonus_pcm, rendered = rt.sound_pcm(g.world, bonus, context.allocator); !rendered {
+		g.error = "SOUND bonus HAS NO NOTES"
+		return
+	}
+	prestige_sound, _ := rt.find_sound(g.world, SOUND_PRESTIGE)
+	if g.prestige_pcm, rendered = rt.sound_pcm(g.world, prestige_sound, context.allocator); !rendered {
+		g.error = "SOUND prestige HAS NO NOTES"
 		return
 	}
 	ok: bool
@@ -221,6 +241,10 @@ update :: proc(g: ^Game, dt_ms: f64) {
 		return
 	}
 	g.message_ms = max(g.message_ms - dt_ms, 0)
+	if g.message_ms == 0 {
+		g.prestige_armed = false // an unanswered "press again" runs out
+	}
+	g.bonus_flash_ms = max(g.bonus_flash_ms - dt_ms, 0)
 	g.step_cooldown_ms = max(g.step_cooldown_ms - dt_ms, 0) // before the repeat, which may step
 	repeat_held(g, dt_ms)
 	if g.state != .Playing {
@@ -238,6 +262,8 @@ destroy :: proc(g: ^Game) {
 	delete(g.pickup_pcm)
 	delete(g.over_pcm)
 	delete(g.buy_pcm)
+	delete(g.bonus_pcm)
+	delete(g.prestige_pcm)
 	free(g.world)
 	g^ = {}
 }
