@@ -20,6 +20,7 @@ make_tool :: proc() -> cm.Tool {
 			}
 		},
 		update = proc(data: rawptr, dt_ms: f64) {game.update((^game.Game)(data), dt_ms)},
+		take_audio = proc(data: rawptr) -> (cm.Audio_Request, bool) {return game.take_audio((^game.Game)(data))},
 		draw = proc(data: rawptr, r: ^cm.Renderer) {game.draw((^game.Game)(data), r)},
 	}
 }

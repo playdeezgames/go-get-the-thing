@@ -2,6 +2,7 @@
 package game
 
 import rt "anvil:anvil_runtime"
+import cm "anvil:common"
 import "core:testing"
 
 @(test)
@@ -181,4 +182,29 @@ test_the_clock_only_runs_while_playing :: proc(t: ^testing.T) {
 	update(g, 0)
 	update(g, -5) // a bad step counts as nothing
 	testing.expect_value(t, g.ms_left, g.round_ms)
+}
+
+@(test)
+test_a_pickup_plays_its_sound_and_the_end_of_the_round_plays_game_over :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	_, any := take_audio(g)
+	testing.expect(t, !any) // silence until something happens
+	rt.play_place(&g.play, g.world, g.thing, g.map_index, 3, 5)
+	move_player(g, 1, 0)
+	req, ok := take_audio(g)
+	testing.expect(t, ok)
+	testing.expect_value(t, req.action, cm.Audio_Action.Play)
+	testing.expect_value(t, req.channel, CHANNEL_EFFECTS)
+	testing.expect(t, len(req.samples) > 0)
+	testing.expect(t, raw_data(req.samples) == raw_data(g.pickup_pcm))
+	_, more := take_audio(g)
+	testing.expect(t, !more)
+	update(g, 31_000)
+	req, ok = take_audio(g)
+	testing.expect(t, ok)
+	testing.expect(t, raw_data(req.samples) == raw_data(g.over_pcm))
+	update(g, 1000) // already over: no second sound
+	_, more = take_audio(g)
+	testing.expect(t, !more)
 }

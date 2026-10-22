@@ -147,6 +147,10 @@
     {"name": "round_seconds", "number": 30},
     {"name": "points_per_thing", "number": 1}
   ],
+  "sounds": [
+    {"name": "pickup", "text": "T220 O5 L16 C E G >C8", "loop": false},
+    {"name": "game_over", "text": "T160 O4 L8 G E C <G4 C2", "loop": false}
+  ],
   "character_types": [
     {"name": "hero", "sprite_set": "actors", "sprite": "hero", "tags": []},
     {"name": "thing", "sprite_set": "actors", "sprite": "thing", "tags": ["thing"]}

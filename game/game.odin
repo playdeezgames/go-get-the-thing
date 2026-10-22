@@ -14,6 +14,10 @@ MAP_NAME :: "arena"
 DEFAULT_ROUND_SECONDS :: 30
 DEFAULT_POINTS_PER_THING :: 1
 
+SOUND_PICKUP :: "pickup"
+SOUND_GAME_OVER :: "game_over"
+CHANNEL_EFFECTS :: 0 // a new effect replaces the one still playing
+
 State :: enum {
 	Title,
 	Playing,
@@ -37,6 +41,10 @@ Game :: struct {
 	points_per_thing: int,
 	rng:        u64, // xorshift state: seedable, and the same on native and wasm
 	input_map:  ^cm.Input_Map, // for on-screen command names; nil gives the defaults
+	pickup_pcm: []i16, // the sounds, rendered once at start-up (heap), so requests can point at them
+	over_pcm:   []i16,
+	audio:      [8]cm.Audio_Request, // queued for the frontend, oldest first
+	audio_n:    int,
 }
 
 // Loads the embedded world and checks it has what the game needs. On failure `error` says why.
@@ -53,6 +61,21 @@ init :: proc(g: ^Game) {
 	}
 	if missing := rt.required_missing(g.world, &g.tags); len(missing) > 0 {
 		g.error = fmt.aprintf("WORLD LACKS TAG %s", missing[0])
+		return
+	}
+	if missing := rt.missing_sounds(g.world, {SOUND_PICKUP, SOUND_GAME_OVER}); len(missing) > 0 {
+		g.error = fmt.aprintf("WORLD LACKS SOUND %s", missing[0])
+		return
+	}
+	pickup, _ := rt.find_sound(g.world, SOUND_PICKUP)
+	over, _ := rt.find_sound(g.world, SOUND_GAME_OVER)
+	rendered: bool
+	if g.pickup_pcm, rendered = rt.sound_pcm(g.world, pickup, context.allocator); !rendered {
+		g.error = "SOUND pickup HAS NO NOTES"
+		return
+	}
+	if g.over_pcm, rendered = rt.sound_pcm(g.world, over, context.allocator); !rendered {
+		g.error = "SOUND game_over HAS NO NOTES"
 		return
 	}
 	ok: bool
@@ -140,6 +163,7 @@ move_player :: proc(g: ^Game, dx, dy: int) -> rt.Move_Result {
 	result, tx, ty := rt.play_can_step(&g.play, g.world, g.player, dx, dy)
 	if result == .Occupied && rt.play_character_at(&g.play, g.map_index, tx, ty) == g.thing {
 		g.score += g.points_per_thing
+		play(g, g.pickup_pcm)
 		rt.play_unplace(&g.play, g.thing)
 		result = rt.play_step(&g.play, g.world, g.player, dx, dy)
 		respawn_thing(g)
@@ -170,6 +194,25 @@ respawn_thing :: proc(g: ^Game) -> bool {
 	return rt.play_place(&g.play, g.world, g.thing, g.map_index, c.x, c.y) == .Placed
 }
 
+// Queues a sound effect for the frontend (dropped if the queue is full).
+play :: proc(g: ^Game, samples: []i16) {
+	if g.audio_n < len(g.audio) {
+		g.audio[g.audio_n] = {action = .Play, channel = CHANNEL_EFFECTS, samples = samples, rate = cm.SOUND_RATE}
+		g.audio_n += 1
+	}
+}
+
+// The next queued audio request, oldest first: the Tool's `take_audio`.
+take_audio :: proc(g: ^Game) -> (req: cm.Audio_Request, ok: bool) {
+	if g.audio_n == 0 {
+		return {}, false
+	}
+	req = g.audio[0]
+	copy(g.audio[:], g.audio[1:g.audio_n])
+	g.audio_n -= 1
+	return req, true
+}
+
 // Called every frame with the elapsed milliseconds (the frontends clamp it).
 update :: proc(g: ^Game, dt_ms: f64) {
 	if g.state != .Playing || !(dt_ms > 0) {
@@ -179,10 +222,13 @@ update :: proc(g: ^Game, dt_ms: f64) {
 	if g.ms_left <= 0 {
 		g.ms_left = 0
 		g.state = .Game_Over
+		play(g, g.over_pcm)
 	}
 }
 
 destroy :: proc(g: ^Game) {
+	delete(g.pickup_pcm)
+	delete(g.over_pcm)
 	free(g.world)
 	g^ = {}
 }

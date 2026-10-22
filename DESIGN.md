@@ -2,7 +2,7 @@
 
 The game: a character in a walled room (exterior and interior walls) and a "Thing". Walking onto the Thing picks it up, scores a point, and the Thing appears somewhere else. A timer counts down; at zero the game ends and the final score is shown.
 
-"Anvil" means `/home/yermom/git/anvil-of-splorr` at commit `f92ea49` or later. Its spec is `WORLD.md`; the game-side API is the `anvil_runtime` package (`anvil_runtime/world.odin`, `play.odin`). All the gaps this game originally had (placing entities, role tags, spawn points, runtime library, drawing, game parameters, tag requirements, web loading) are closed; sound is deferred on purpose and this game ships silent.
+"Anvil" means `/home/yermom/git/anvil-of-splorr` at commit `f92ea49` or later. Its spec is `WORLD.md`; the game-side API is the `anvil_runtime` package (`anvil_runtime/world.odin`, `play.odin`). All the gaps this game originally had (placing entities, role tags, spawn points, runtime library, drawing, game parameters, tag requirements, web loading) are closed; sound has since been added (PLAY text sounds in the world).
 
 ## Content to author in the Anvil (`world.json`)
 
@@ -17,7 +17,7 @@ The game: a character in a walled room (exterior and interior walls) and a "Thin
 | The Thing | A character type carrying the tag `thing`; one character of it placed on a floor cell |
 | Where the Thing may appear | Tag `spawn` on floor cells (per-cell tags in the map editor) or on a terrain |
 | Parameters | Whole numbers `round_seconds` and `points_per_thing`; the game gives defaults if absent |
-| Sound | None |
+| Sound | Two PLAY-text sounds, `pickup` (a rising jingle) and `game_over` (a falling tune), played through the Tool's `take_audio` hook on channel 0; WAV copies for listening are in `sounds/` |
 
 Ship `game_tags.json` beside the game and the Anvil's world editor: `{"tags": [{"name": "thing", "note": "what the player picks up"}, {"name": "spawn", "note": "cells the Thing may appear on"}]}`. The TAGS screen then marks them NEEDED / MISSING and CREATE adds the missing ones. The game checks the same list at start-up.
 
@@ -48,6 +48,5 @@ Tag effective values: a character type or terrain has a tag or not; a character 
 
 ## Remaining Anvil gaps
 
-- **Sound**: deferred in the Anvil's `BACKLOG.md`; the game is silent.
 - **Play mode does not show `spawn` cells**: check them on the map editor's cell Tags screen.
 - Tag names `thing` and `spawn` remain a convention, now enforced by `game_tags.json` and `rt.required_missing`.
