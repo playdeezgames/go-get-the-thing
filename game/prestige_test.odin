@@ -171,7 +171,7 @@ test_without_the_perk_no_time_is_ever_added_and_the_dice_are_not_rolled :: proc(
 }
 
 @(test)
-test_a_run_gets_at_most_a_few_time_bonuses_so_it_always_ends :: proc(t: ^testing.T) {
+test_a_run_gets_at_most_the_capped_time_bonuses_so_it_always_ends :: proc(t: ^testing.T) {
 	g := started()
 	defer finish(g)
 	g.progress.perks[.Time_Chance] = 20 // far above 100 percent: every Thing would add time
@@ -186,8 +186,8 @@ test_a_run_gets_at_most_a_few_time_bonuses_so_it_always_ends :: proc(t: ^testing
 		}
 	}
 	testing.expect_value(t, g.state, State.Shop) // the run ended
-	testing.expect(t, g.time_bonuses <= MAX_TIME_BONUSES_PER_RUN)
-	testing.expect_value(t, g.time_bonuses, MAX_TIME_BONUSES_PER_RUN)
+	testing.expect(t, g.time_bonuses <= time_bonus_cap(g.progress))
+	testing.expect_value(t, g.time_bonuses, time_bonus_cap(g.progress))
 }
 
 @(test)
@@ -216,4 +216,36 @@ test_the_hud_shows_the_bonus_for_a_moment_and_the_shop_fits_every_row :: proc(t:
 	sayf(g, "PRESS AGAIN: +%d GEMS, COINS AND UPGRADES RESET", 99_999)
 	testing.expect(t, cm.text_width(g.message) <= cm.SCREEN_W - 28)
 	testing.expect(t, cm.text_is_drawable(g.message))
+}
+
+@(test)
+test_the_time_bonus_cap_grows_with_the_perk_level :: proc(t: ^testing.T) {
+	p: Progress
+	testing.expect_value(t, time_bonus_cap(p), TIME_BONUS_CAP_BASE)
+	p.perks[.Time_Chance] = 10
+	testing.expect_value(t, time_bonus_cap(p), TIME_BONUS_CAP_BASE + 10 * TIME_BONUS_CAP_PER_LEVEL)
+}
+
+@(test)
+test_a_thing_can_pay_extra_coins_by_chance :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	g.progress.perks[.Lucky_Coins] = 5 // 20 percent
+	hits := 0
+	for _ in 0 ..< 500 {
+		g.score = 0
+		rt.play_unplace(&g.play, g.thing)
+		p := rt.play_position(&g.play, g.player)
+		rt.play_place(&g.play, g.world, g.thing, g.map_index, p.x + 1, p.y)
+		g.step_cooldown_ms = 0
+		move_player(g, 1, 0)
+		earned := g.score // before stepping back, which may land on the respawned Thing
+		move_player(g, -1, 0)
+		base := coins_per_thing(g.progress, g.points_per_thing)
+		if earned != base {
+			hits += 1
+			testing.expect_value(t, earned, base * LUCKY_MULTIPLIER)
+		}
+	}
+	testing.expect(t, hits > 60 && hits < 140) // about 100 of 500
 }

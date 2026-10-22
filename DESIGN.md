@@ -95,3 +95,7 @@ The plain "collect for points" round is not much of a game, so it becomes an inc
 - Prestige at 5 gems (about 25,000 coins earned): eras of 41, 32, 26, 24 and 24 minutes.
 - Prestige at 10 gems (about 100,000 coins earned): eras of 64, 39, 37, 35 and 35 minutes.
 - The perk speeds the next era by about 40 percent by level 3 or 4 and then stops helping: with the 10-bonus cap, higher levels hardly change a late-game run. Perk levels beyond about 4 matter little until the cap grows or more effects exist. That is the main thing to tune next.
+
+**Perk tuning (October 22, 2026).** The time-bonus cap was why perk levels past about 4 did nothing. Two changes: (1) the cap now grows with the perk: `time_bonus_cap` = 4 + 2 per TIME BONUS CHANCE level (6 at level 1, 24 at level 10; still finite, so a run always ends); (2) a second perk, **LUCKY COINS** (+4 percent per level, 10 levels, 3 gems then 150 percent growth): a picked-up Thing pays 5 times its coins by that chance (`roll_secondary_effect`; plays the `bonus` sound, no new HUD text; the dice are not rolled without the perk). The shop's rows are 10 pixels high now to fit the extra row. The simulation buys whichever perk is cheaper first.
+
+Simulated again (same bot): prestige at 5 gems gives eras of 42, 29, 23, 22 and 22 minutes (was 41, 32, 26, 24, 24), perks ending at time-chance 3 and lucky 2; prestige at 10 gems gives 64, 37, 30, 25 and 24 minutes (was 64, 39, 37, 35, 35), perks ending at 4 and 3. Later eras now keep getting faster as perk levels rise instead of flattening at 35 minutes.

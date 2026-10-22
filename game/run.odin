@@ -122,16 +122,19 @@ place_on_free_cell :: proc(g: ^Game, thing: int) -> bool {
 	return rt.play_place(&g.play, g.world, thing, g.map_index, c.x, c.y) == .Placed
 }
 
-// A picked-up Thing may carry a secondary effect, by chance (a perk bought with gems). For now the
-// only one adds time to the clock, at most MAX_TIME_BONUSES_PER_RUN times a run. The dice are not
-// rolled at all with no chance, so a game without the perk draws the same numbers as before.
+// A picked-up Thing may carry secondary effects, by chance (perks bought with gems): extra time on
+// the clock (at most `time_bonus_cap` times a run) and a lucky payout of LUCKY_MULTIPLIER times the
+// coins. The dice are not rolled at all without the perk, so a game without perks draws the same
+// numbers as before.
 roll_secondary_effect :: proc(g: ^Game) {
-	chance := time_chance_pct(g.progress)
-	if chance == 0 || g.time_bonuses >= MAX_TIME_BONUSES_PER_RUN || random_below(g, 100) >= chance {
-		return
+	if chance := time_chance_pct(g.progress); chance > 0 && g.time_bonuses < time_bonus_cap(g.progress) && random_below(g, 100) < chance {
+		g.ms_left += TIME_BONUS_MS
+		g.time_bonuses += 1
+		g.bonus_flash_ms = BONUS_FLASH_MS
+		play(g, g.bonus_pcm, CHANNEL_BONUS)
 	}
-	g.ms_left += TIME_BONUS_MS
-	g.time_bonuses += 1
-	g.bonus_flash_ms = BONUS_FLASH_MS
-	play(g, g.bonus_pcm, CHANNEL_BONUS)
+	if chance := lucky_chance_pct(g.progress); chance > 0 && random_below(g, 100) < chance {
+		g.score += coins_per_thing(g.progress, g.points_per_thing) * (LUCKY_MULTIPLIER - 1)
+		play(g, g.bonus_pcm, CHANNEL_BONUS)
+	}
 }

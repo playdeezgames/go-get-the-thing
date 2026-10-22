@@ -34,6 +34,7 @@ UPGRADES := [Upgrade]Upgrade_Info {
 // Perks are bought with gems, the prestige currency, and last through prestiges.
 Perk :: enum {
 	Time_Chance,
+	Lucky_Coins,
 }
 
 Perk_Info :: struct {
@@ -47,13 +48,18 @@ Perk_Info :: struct {
 
 PERKS := [Perk]Perk_Info {
 	.Time_Chance = {"time_chance", "TIME BONUS CHANCE", "+5% CHANCE A THING ADDS 5 SECONDS", 2, 150, 10},
+	.Lucky_Coins = {"lucky_coins", "LUCKY COINS", "+4% CHANCE A THING PAYS 5 TIMES", 3, 150, 10},
 }
 
 TIME_CHANCE_PCT_PER_LEVEL :: 5
 TIME_BONUS_MS :: 5000
+LUCKY_CHANCE_PCT_PER_LEVEL :: 4
+LUCKY_MULTIPLIER :: 5
 // Helpers pick up Things many times a second late in the game: without a limit a small chance of
-// extra time would outrun the clock and a run would never end.
-MAX_TIME_BONUSES_PER_RUN :: 10
+// extra time would outrun the clock and a run would never end. The limit grows with the perk's
+// level, so every level of it matters.
+TIME_BONUS_CAP_BASE :: 4
+TIME_BONUS_CAP_PER_LEVEL :: 2
 GEM_ERA_DIVISOR :: 1000 // gems = the square root of (coins earned since the last prestige / this)
 
 HELPER_BASE_STEP_MS :: 600
@@ -171,6 +177,16 @@ buy_perk :: proc(p: ^Progress, k: Perk) -> Buy_Result {
 // The chance, in percent, that a picked-up Thing adds time to the clock.
 time_chance_pct :: proc(p: Progress) -> int {
 	return p.perks[.Time_Chance] * TIME_CHANCE_PCT_PER_LEVEL
+}
+
+// The chance, in percent, that a picked-up Thing pays LUCKY_MULTIPLIER times its coins.
+lucky_chance_pct :: proc(p: Progress) -> int {
+	return p.perks[.Lucky_Coins] * LUCKY_CHANCE_PCT_PER_LEVEL
+}
+
+// The most time bonuses one run can have (the time-chance perk raises it).
+time_bonus_cap :: proc(p: Progress) -> int {
+	return TIME_BONUS_CAP_BASE + TIME_BONUS_CAP_PER_LEVEL * p.perks[.Time_Chance]
 }
 
 // What prestiging now would give: the square root of the coins earned since the last prestige,
