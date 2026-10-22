@@ -13,7 +13,7 @@ test_the_embedded_world_starts_the_game :: proc(t: ^testing.T) {
 	testing.expect_value(t, g.error, "")
 	cols, rows, _ := rt.map_size(g.world, g.map_index)
 	testing.expect_value(t, cols, 20)
-	testing.expect_value(t, rows, 11)
+	testing.expect_value(t, rows, 10)
 	testing.expect(t, g.thing != g.player)
 	pos := rt.play_position(&g.play, g.player)
 	testing.expect(t, !rt.cell_is_solid(g.world, g.map_index, pos.x, pos.y))

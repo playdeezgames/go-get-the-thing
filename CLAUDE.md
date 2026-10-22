@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## State of the repo
 
-`DESIGN.md` is the plan; `world.json` and `game_tags.json` are exported from the Anvil (do not hand-edit `world.json`). Code: `game/` (platform-independent logic and drawing, with tests) and `app/` (`make_tool`, the Tool the Anvil's frontends drive; see the Anvil's `GAMES.md`). Steps 2 and 3 are done: rules (movement, pickup, respawn, timer on `update`, title and game-over states), a minimal HUD and the title/game-over text. Mouse input, a tidier HUD and web polish are still to do.
+`DESIGN.md` is the plan; `world.json` and `game_tags.json` are exported from the Anvil (do not hand-edit `world.json`). Code: `game/` (platform-independent logic and drawing, with tests) and `app/` (`make_tool`, the Tool the Anvil's frontends drive; see the Anvil's `GAMES.md`). Steps 2 and 3 are done: rules (movement, pickup, respawn, timer on `update`, title and game-over states), a minimal HUD and the title/game-over text. Mouse input is an on-screen pad (`game/pad.odin`: four arrows and a green button in the strip below the 20x10 room; a held direction repeats), not click-a-cell. A tidier HUD, gamepad/native checks and web polish are still to do.
 
 ```bash
 ./build.sh test     # odin test game (needs -collection:anvil, passed for you)

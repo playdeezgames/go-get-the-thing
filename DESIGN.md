@@ -11,7 +11,7 @@ The game: a character in a walled room (exterior and interior walls) and a "Thin
 | Palette, tile size | World-wide: 16 colours, one tile size (16x16 gives 20x11 tiles on the 320x180 surface) |
 | Floor and wall images | Tileset images |
 | Terrains | `floor`, `wall`. `wall` carries the built-in tag `solid` |
-| The room | One map, 20x11 (fits one screen: no scrolling), outer wall plus interior walls |
+| The room | One map, 20x10 (fits one screen with a 20-pixel strip below for the on-screen pad: no scrolling), outer wall plus interior walls |
 | Tags | `solid` (built in), `thing`, `spawn` |
 | Player | A character type `player` (with a sprite); one character of it placed on a floor cell and set as the world's player |
 | The Thing | A character type carrying the tag `thing`; one character of it placed on a floor cell |
@@ -35,7 +35,7 @@ Tag effective values: a character type or terrain has a tag or not; a character 
 8. **Random source**: seedable RNG (the wasm RNG quirk is in `bok-of-splorr/splorr/Gotchas.md`).
 9. **Drawing**: per frame, `rt.zoom_window(world, map, 0, 0, 20, 11, 0, 0, 1)` then `rt.draw_terrain` and `rt.draw_characters(&r, world, &ps, window)` on the Anvil's `Renderer`. The characters are drawn from the `Play_State`, so they appear where they are now. Set `window.mark_player` only if the author wants the corner mark. Leave room for the HUD (the 20x11 room at zoom 1 uses 320x176 of 180 rows, so draw the HUD as an overlay on the wall rows or use a smaller room such as 20x10).
 10. **HUD and screens**: score and time with the UI font (`draw_text`), title and game-over screens. Any on-screen text that names a command goes through `action_label`.
-11. **Input**: the Anvil's eight commands and `input_map.json`: keyboard, gamepad and mouse all work (mouse: click a neighbouring cell, using `rt.cell_at_pixel`).
+11. **Input**: the Anvil's eight commands and `input_map.json`: keyboard, gamepad and mouse all work (mouse: an on-screen pad below the room, see `game/pad.odin`; clicking cells was dropped as awkward).
 12. **Frontends**: native SDL2 and web (`js_wasm32`) as an Anvil-style app: game logic platform-independent, frontends only draw and translate input. For the web either embed (preferred) or `WEB_FETCH=world.json ./build.sh web <app>`.
 
 ## Things to decide when building

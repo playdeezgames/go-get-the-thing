@@ -45,6 +45,9 @@ Game :: struct {
 	over_pcm:   []i16,
 	audio:      [8]cm.Audio_Request, // queued for the frontend, oldest first
 	audio_n:    int,
+	holding:    bool, // a pad button is held with the mouse
+	held:       cm.Action,
+	repeat_ms:  f64, // until the held direction repeats
 }
 
 // Loads the embedded world and checks it has what the game needs. On failure `error` says why.
@@ -215,6 +218,7 @@ take_audio :: proc(g: ^Game) -> (req: cm.Audio_Request, ok: bool) {
 
 // Called every frame with the elapsed milliseconds (the frontends clamp it).
 update :: proc(g: ^Game, dt_ms: f64) {
+	repeat_held(g, dt_ms)
 	if g.state != .Playing || !(dt_ms > 0) {
 		return
 	}
@@ -245,10 +249,11 @@ draw :: proc(g: ^Game, r: ^cm.Renderer) {
 	rt.draw_terrain(r, g.world, window)
 	rt.draw_characters(r, g.world, &g.play, window)
 	white := cm.Color{255, 255, 255}
+	draw_pad(g, r)
 	switch g.state {
 	case .Title:
-		banner(r, 60, "GO GET THE THING!", white)
-		banner(r, 76, fmt.tprintf("%s TO START", cm.action_label(g.input_map, .Green)), white)
+		banner(r, 56, "GO GET THE THING!", white)
+		banner(r, 72, fmt.tprintf("%s TO START", cm.action_label(g.input_map, .Green)), white)
 	case .Playing:
 		cm.draw_text(r, 8, 5, fmt.tprintf("SCORE %d", g.score), white)
 		time_text := fmt.tprintf("TIME %d", seconds_left(g))

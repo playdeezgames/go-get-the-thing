@@ -15,8 +15,11 @@ make_tool :: proc() -> cm.Tool {
 		data = &g,
 		set_input_map = proc(data: rawptr, m: ^cm.Input_Map) {(^game.Game)(data).input_map = m},
 		handle_event = proc(data: rawptr, ev: cm.Input_Event) {
+			g := (^game.Game)(data)
 			if cmd, ok := ev.(cm.Command); ok {
-				game.handle_command((^game.Game)(data), cmd.action)
+				game.handle_command(g, cmd.action)
+			} else {
+				game.handle_mouse(g, ev)
 			}
 		},
 		update = proc(data: rawptr, dt_ms: f64) {game.update((^game.Game)(data), dt_ms)},
