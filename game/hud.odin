@@ -13,9 +13,13 @@ HUD_INK :: cm.Color{255, 255, 255}
 HUD_ALERT :: cm.Color{255, 85, 85}
 HUD_ALERT_MS :: 5000.0
 
-// "SCORE", its value, "TIME", its value (on the temp allocator).
-hud_text :: proc(g: ^Game) -> (score_label, score_value, time_label, time_value: string) {
-	return "SCORE", fmt.tprintf("%d", g.score), "TIME", fmt.tprintf("%d", seconds_left(g))
+// Two label/value pairs. In a run: the coins earned so far and the clock. Otherwise: the coins you
+// have and your best run. (On the temp allocator.)
+hud_text :: proc(g: ^Game) -> (left_label, left_value, right_label, right_value: string) {
+	if g.state == .Playing {
+		return "COINS", fmt.tprintf("%d", g.score), "TIME", fmt.tprintf("%d", seconds_left(g))
+	}
+	return "COINS", fmt.tprintf("%d", g.progress.coins), "BEST", fmt.tprintf("%d", g.progress.best_run)
 }
 
 // The clock is red for the last seconds of a round being played.
@@ -24,11 +28,11 @@ time_colour :: proc(g: ^Game) -> cm.Color {
 }
 
 draw_hud :: proc(g: ^Game, r: ^cm.Renderer) {
-	score_label, score_value, time_label, time_value := hud_text(g)
-	centred(r, HUD_LEFT, HUD_TOP_Y, score_label, HUD_LABEL)
-	centred(r, HUD_LEFT, HUD_BOTTOM_Y, score_value, HUD_INK)
-	centred(r, HUD_RIGHT, HUD_TOP_Y, time_label, HUD_LABEL)
-	centred(r, HUD_RIGHT, HUD_BOTTOM_Y, time_value, time_colour(g))
+	left_label, left_value, right_label, right_value := hud_text(g)
+	centred(r, HUD_LEFT, HUD_TOP_Y, left_label, HUD_LABEL)
+	centred(r, HUD_LEFT, HUD_BOTTOM_Y, left_value, HUD_INK)
+	centred(r, HUD_RIGHT, HUD_TOP_Y, right_label, HUD_LABEL)
+	centred(r, HUD_RIGHT, HUD_BOTTOM_Y, right_value, time_colour(g))
 }
 
 centred :: proc(r: ^cm.Renderer, box: cm.Rect, y: int, text: string, c: cm.Color) {

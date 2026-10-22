@@ -69,6 +69,9 @@ test_clicking_a_pad_button_sends_its_command :: proc(t: ^testing.T) {
 	}
 	click(g, gx, gy, true)
 	click(g, gx, gy, false)
+	testing.expect_value(t, g.state, State.Shop)
+	click(g, gx, gy, true) // START RUN
+	click(g, gx, gy, false)
 	testing.expect_value(t, g.state, State.Playing)
 	for b in PAD_BUTTONS {
 		if b.action == .Right {
@@ -90,6 +93,7 @@ test_holding_a_pad_button_repeats_after_a_delay_and_release_stops_it :: proc(t: 
 			bx, by = centre(b)
 		}
 	}
+	g.progress.levels[.Player_Speed] = 8 // 50 ms between steps: the pad's own repeat is the limit here
 	click(g, bx, by, true)
 	testing.expect_value(t, player_at(g), [2]int{3, 5}) // at once
 	update(g, PAD_REPEAT_DELAY_MS - 1)

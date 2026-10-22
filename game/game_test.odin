@@ -35,7 +35,8 @@ started :: proc(seed: u64 = 1) -> ^Game {
 	g := new(Game)
 	init(g)
 	set_seed(g, seed)
-	handle_command(g, .Green)
+	handle_command(g, .Green) // the title -> the shop
+	handle_command(g, .Green) // START RUN
 	return g
 }
 
@@ -66,6 +67,8 @@ test_the_game_waits_on_the_title_until_green :: proc(t: ^testing.T) {
 	update(g, 1000)
 	testing.expect_value(t, g.ms_left, f64(30_000))
 	handle_command(g, .Green)
+	testing.expect_value(t, g.state, State.Shop)
+	handle_command(g, .Green) // START RUN is the highlighted row
 	testing.expect_value(t, g.state, State.Playing)
 }
 
@@ -137,7 +140,7 @@ test_points_per_thing_comes_from_the_world :: proc(t: ^testing.T) {
 }
 
 @(test)
-test_the_timer_ends_the_round_and_green_plays_again :: proc(t: ^testing.T) {
+test_the_timer_ends_the_run_banks_the_coins_and_the_shop_starts_the_next :: proc(t: ^testing.T) {
 	g := started()
 	defer finish(g)
 	g.score = 3
@@ -145,12 +148,14 @@ test_the_timer_ends_the_round_and_green_plays_again :: proc(t: ^testing.T) {
 	testing.expect_value(t, g.state, State.Playing)
 	testing.expect_value(t, g.ms_left, f64(100))
 	update(g, 250)
-	testing.expect_value(t, g.state, State.Game_Over)
+	testing.expect_value(t, g.state, State.Shop)
 	testing.expect_value(t, g.ms_left, f64(0))
-	testing.expect_value(t, g.score, 3)
+	testing.expect_value(t, g.progress.coins, 3) // the run's coins were banked
+	testing.expect_value(t, g.progress.best_run, 3)
+	testing.expect_value(t, g.last_run, 3)
 	before := player_at(g)
 	testing.expect_value(t, move_player(g, 1, 0), rt.Move_Result.Not_Placed)
-	handle_command(g, .Right)
+	handle_command(g, .Right) // in the shop this is not a step
 	testing.expect_value(t, player_at(g), before)
 	handle_command(g, .Green)
 	testing.expect_value(t, g.state, State.Playing)
