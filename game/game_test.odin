@@ -235,3 +235,27 @@ test_every_frame_is_presented_once :: proc(t: ^testing.T) {
 	testing.expect_value(t, count.presents, 4)
 	testing.expect_value(t, count.clears, 4)
 }
+
+@(test)
+test_the_world_has_the_helpers_things_and_sound_the_incremental_game_needs :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	helpers, things, placed := 0, 0, 0
+	for ci in 0 ..< rt.character_count(g.world) {
+		if ct := rt.character_type(g.world, ci); ct != nil && cm.name_str(&ct.name) == "helper" {
+			helpers += 1
+			testing.expect(t, !rt.play_position(&g.play, ci).placed) // they stand nowhere until bought
+		}
+		if rt.character_has_tag(g.world, ci, g.thing_tag) {
+			things += 1
+			if rt.play_position(&g.play, ci).placed {
+				placed += 1
+			}
+		}
+	}
+	testing.expect_value(t, helpers, 4)
+	testing.expect_value(t, things, 4)
+	testing.expect_value(t, placed, 1) // only the first Thing is in the room at the start
+	_, has_buy := rt.find_sound(g.world, "buy")
+	testing.expect(t, has_buy)
+}

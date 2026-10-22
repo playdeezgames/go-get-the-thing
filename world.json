@@ -108,6 +108,27 @@
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0
       ]
+    },
+    {
+      "name": "helper",
+      "bytes": [
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 15, 240, 0, 0, 0,
+        0, 0, 0, 10, 160, 0, 0, 0,
+        0, 0, 10, 170, 170, 170, 0, 0,
+        0, 0, 10, 250, 170, 250, 0, 0,
+        0, 0, 10, 170, 170, 170, 0, 0,
+        0, 0, 0, 10, 170, 0, 0, 0,
+        0, 0, 2, 34, 34, 34, 0, 0,
+        0, 10, 162, 34, 34, 170, 0, 0,
+        0, 10, 162, 42, 34, 170, 0, 0,
+        0, 10, 162, 34, 34, 170, 0, 0,
+        0, 0, 2, 34, 34, 34, 0, 0,
+        0, 0, 0, 32, 2, 0, 0, 0,
+        0, 0, 0, 32, 2, 0, 0, 0,
+        0, 0, 0, 170, 10, 160, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0
+      ]
     }
   ]
 }}
@@ -139,7 +160,8 @@
   "sprite_sets": [
     {"name": "actors", "sprites": [
       {"name": "hero", "tileset": "basic", "image": "hero", "transparent": 0},
-      {"name": "thing", "tileset": "basic", "image": "thing", "transparent": 0}
+      {"name": "thing", "tileset": "basic", "image": "thing", "transparent": 0},
+      {"name": "helper", "tileset": "basic", "image": "helper", "transparent": 0}
     ]}
   ],
   "params": [
@@ -148,15 +170,24 @@
   ],
   "sounds": [
     {"name": "pickup", "text": "T220 O5 L16 C E G >C8", "loop": false},
-    {"name": "game_over", "text": "T160 O4 L8 G E C <G4 C2", "loop": false}
+    {"name": "game_over", "text": "T160 O4 L8 G E C <G4 C2", "loop": false},
+    {"name": "buy", "text": "T240 O5 L16 E A >C8", "loop": false}
   ],
   "character_types": [
     {"name": "hero", "sprite_set": "actors", "sprite": "hero", "tags": []},
-    {"name": "thing", "sprite_set": "actors", "sprite": "thing", "tags": ["thing"]}
+    {"name": "thing", "sprite_set": "actors", "sprite": "thing", "tags": ["thing"]},
+    {"name": "helper", "sprite_set": "actors", "sprite": "helper", "tags": []}
   ],
   "characters": [
     {"uuid": "f465b9a1-6a9e-486e-8f45-0980185dc406", "name": "Player", "type": "hero", "tags": [], "tags_cleared": []},
-    {"uuid": "ec814c72-a8b8-4bf8-9b74-a8516a89391b", "name": "Thing", "type": "thing", "tags": [], "tags_cleared": []}
+    {"uuid": "ec814c72-a8b8-4bf8-9b74-a8516a89391b", "name": "Thing", "type": "thing", "tags": [], "tags_cleared": []},
+    {"uuid": "eaa27e74-0c9f-4b53-a132-451fbe9a822c", "name": "Helper 1", "type": "helper", "tags": [], "tags_cleared": []},
+    {"uuid": "3cab16c9-3a13-44c5-838a-c9419078e53e", "name": "Helper 2", "type": "helper", "tags": [], "tags_cleared": []},
+    {"uuid": "a6b08c36-8c48-48f3-893d-b13cddec7e65", "name": "Helper 3", "type": "helper", "tags": [], "tags_cleared": []},
+    {"uuid": "f6de5b05-e026-43c2-bbdb-bbe03fa02186", "name": "Helper 4", "type": "helper", "tags": [], "tags_cleared": []},
+    {"uuid": "2fa93a98-5575-4f8e-994d-cc00160f4eb5", "name": "Thing 2", "type": "thing", "tags": [], "tags_cleared": []},
+    {"uuid": "ab801d97-973f-4b84-9512-52755c82297d", "name": "Thing 3", "type": "thing", "tags": [], "tags_cleared": []},
+    {"uuid": "867f7f2b-1017-4fc3-a44f-9183a0e96634", "name": "Thing 4", "type": "thing", "tags": [], "tags_cleared": []}
   ],
   "player": "f465b9a1-6a9e-486e-8f45-0980185dc406"
 }
