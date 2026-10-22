@@ -237,7 +237,13 @@ destroy :: proc(g: ^Game) {
 	g^ = {}
 }
 
+// Draws a whole frame and presents it (the SDL2 frontend leaves presenting to the tool).
 draw :: proc(g: ^Game, r: ^cm.Renderer) {
+	draw_frame(g, r)
+	cm.renderer_present(r)
+}
+
+draw_frame :: proc(g: ^Game, r: ^cm.Renderer) {
 	cm.renderer_clear(r, cm.Color{0, 0, 0})
 	if g.error != "" {
 		cm.draw_text(r, 8, 8, "CANNOT START", cm.Color{255, 85, 85})

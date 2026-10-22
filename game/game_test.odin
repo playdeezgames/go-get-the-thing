@@ -208,3 +208,30 @@ test_a_pickup_plays_its_sound_and_the_end_of_the_round_plays_game_over :: proc(t
 	_, more = take_audio(g)
 	testing.expect(t, !more)
 }
+
+Frame_Count :: struct {
+	clears, fills, presents: int,
+}
+
+@(test)
+test_every_frame_is_presented_once :: proc(t: ^testing.T) {
+	g := new(Game)
+	defer finish(g)
+	init(g)
+	count: Frame_Count
+	r := cm.Renderer {
+		data      = &count,
+		clear     = proc(data: rawptr, c: cm.Color) {(^Frame_Count)(data).clears += 1},
+		fill_rect = proc(data: rawptr, x, y, w, h: int, c: cm.Color) {(^Frame_Count)(data).fills += 1},
+		present   = proc(data: rawptr) {(^Frame_Count)(data).presents += 1},
+	}
+	draw(g, &r) // title
+	handle_command(g, .Green)
+	draw(g, &r) // playing
+	update(g, 31_000)
+	draw(g, &r) // game over
+	g.error = "BROKEN"
+	draw(g, &r) // the error screen
+	testing.expect_value(t, count.presents, 4)
+	testing.expect_value(t, count.clears, 4)
+}
