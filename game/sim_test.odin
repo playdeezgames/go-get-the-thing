@@ -9,8 +9,8 @@ import "core:fmt"
 import "core:testing"
 
 SIM :: #config(SIM, false)
-SIM_FRAME_MS :: 16.0
-SIM_MAX_RUNS :: 600
+SIM_FRAME_MS :: f64(#config(SIM_FRAME, 16)) // a coarser frame (e.g. 40) simulates faster
+SIM_MAX_RUNS :: 1200
 
 Sim_Run :: struct {
 	earned:    int,
@@ -28,10 +28,10 @@ Sim :: struct {
 	total_game_s: f64,
 }
 
-// Plays runs until everything is maxed (or SIM_MAX_RUNS). In runs up to `plays_until_run` the player is
-// a bot that walks to the nearest Thing as fast as the player-speed upgrade allows; after that the
-// player stands still and only helpers earn.
-simulate :: proc(seed: u64, plays_until_run: int) -> Sim {
+// Plays runs until everything is maxed (or SIM_MAX_RUNS). The player is a bot that walks to the
+// nearest Thing as fast as the player-speed upgrade allows; with `afk_with_helpers` > 0 it stops
+// playing once it owns that many helpers and leaves the earning to them.
+simulate :: proc(seed: u64, afk_with_helpers: int) -> Sim {
 	g := new(Game)
 	defer {destroy(g); free(g)}
 	init(g)
@@ -42,7 +42,7 @@ simulate :: proc(seed: u64, plays_until_run: int) -> Sim {
 		start_run(g)
 		run_s := g.ms_left / 1000
 		for g.state == .Playing {
-			if run <= plays_until_run && g.step_cooldown_ms <= 0 {
+			if (afk_with_helpers == 0 || g.progress.levels[.Helpers] < afk_with_helpers) && g.step_cooldown_ms <= 0 {
 				if dx, dy, ok := step_towards_nearest_thing(g, g.player); ok {
 					handle_command(g, dx > 0 ? .Right : dx < 0 ? .Left : dy > 0 ? .Down : .Up)
 				}
@@ -91,7 +91,7 @@ report :: proc(title: string, sim: Sim, table: bool) {
 	if table {
 		fmt.println("run  earned  secs  bought this shop (levels after: TV RL HP HS MT PS)")
 		for r, i in sim.runs {
-			if i < 12 || i % 10 == 0 || i == len(sim.runs) - 1 {
+			if i < 6 || i % 5 == 0 || i == len(sim.runs) - 1 {
 				names := ""
 				for b in r.bought {
 					names = fmt.tprintf("%s %s", names, UPGRADES[b].name)
@@ -142,11 +142,7 @@ test_balance_report :: proc(t: ^testing.T) {
 		}
 		fmt.printfln("  %-13s %7d  (level 1 costs %d, last costs %d)", UPGRADES[u].name, sum, upgrade_cost(u, 0), upgrade_cost(u, UPGRADES[u].max_level - 1))
 	}
-	report("player plays every run, helpers help", simulate(1, SIM_MAX_RUNS), true)
-	report("player plays 10 runs, then goes AFK (helpers only)", simulate(1, 10), true)
-	report("player plays 8 runs, then goes AFK (helpers only)", simulate(1, 8), false)
-	for seed in 2 ..= 3 {
-		report(fmt.aprintf("player plays every run, seed %d", seed), simulate(u64(seed), SIM_MAX_RUNS), false)
-	}
+	report("player plays every run, helpers help", simulate(1, 0), true)
+	report("player goes AFK once 2 helpers are bought", simulate(1, 2), false)
 	_ = cm.SCREEN_W
 }
