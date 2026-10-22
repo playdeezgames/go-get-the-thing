@@ -14,15 +14,8 @@ make_tool :: proc() -> cm.Tool {
 		title = "Go Get the Thing!",
 		data = &g,
 		default_file = game.SAVE_FILE,
-		take_save = proc(data: rawptr) -> (string, bool) {
-			// The web frontend downloads a file on every save, which no autosave should do: web saving
-			// waits for the Anvil's silent-save story (USER_STORIES.md, 13). Native saves as normal.
-			when ODIN_ARCH == .wasm32 {
-				return "", false
-			} else {
-				return game.take_save((^game.Game)(data))
-			}
-		},
+		// An autosave: native writes the file, the web stores it in browser storage with no download.
+		take_autosave = proc(data: rawptr) -> (string, bool) {return game.take_save((^game.Game)(data))},
 		saved = proc(data: rawptr) {},
 		wants_load = proc(data: rawptr) -> bool {return game.wants_load((^game.Game)(data))},
 		load = proc(data: rawptr, bytes: []u8) -> bool {return game.load_save((^game.Game)(data), bytes)},
