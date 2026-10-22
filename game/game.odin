@@ -256,14 +256,12 @@ draw_frame :: proc(g: ^Game, r: ^cm.Renderer) {
 	rt.draw_characters(r, g.world, &g.play, window)
 	white := cm.Color{255, 255, 255}
 	draw_pad(g, r)
+	draw_hud(g, r)
 	switch g.state {
 	case .Title:
 		banner(r, 56, "GO GET THE THING!", white)
 		banner(r, 72, fmt.tprintf("%s TO START", cm.action_label(g.input_map, .Green)), white)
 	case .Playing:
-		cm.draw_text(r, 8, 5, fmt.tprintf("SCORE %d", g.score), white)
-		time_text := fmt.tprintf("TIME %d", seconds_left(g))
-		cm.draw_text(r, cm.SCREEN_W - 8 - cm.text_width(time_text), 5, time_text, white)
 	case .Game_Over:
 		banner(r, 56, "TIME UP", white)
 		banner(r, 68, fmt.tprintf("FINAL SCORE %d", g.score), white)
