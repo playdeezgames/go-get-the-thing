@@ -64,6 +64,8 @@ Game :: struct {
 	prestige_pcm: []i16,
 	audio:      [8]cm.Audio_Request, // queued for the frontend, oldest first
 	audio_n:    int,
+	pad_dir:    cm.Action, // the direction a gamepad button is holding (valid when pad_dir_set)
+	pad_dir_set: bool,
 	holding:    bool, // a pad button is held with the mouse
 	held:       cm.Action,
 	repeat_ms:  f64, // until the held direction repeats
@@ -256,6 +258,9 @@ update :: proc(g: ^Game, dt_ms: f64) {
 	repeat_held(g, dt_ms)
 	if g.state != .Playing {
 		return
+	}
+	if g.pad_dir_set && g.step_cooldown_ms == 0 && !g.has_queued {
+		handle_command(g, g.pad_dir) // a held gamepad direction keeps walking
 	}
 	run_helpers(g, dt_ms)
 	g.ms_left -= dt_ms

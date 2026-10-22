@@ -138,3 +138,26 @@ test_other_mouse_buttons_and_clicks_in_the_room_do_nothing :: proc(t: ^testing.T
 	update(g, 1000)
 	testing.expect_value(t, player_at(g), [2]int{2, 5})
 }
+
+@(test)
+test_a_gamepad_direction_held_keeps_walking_until_released :: proc(t: ^testing.T) {
+	g := started()
+	defer finish(g)
+	m := cm.default_input_map()
+	g.input_map = &m
+	g.progress.levels[.Player_Speed] = 8
+	pads: cm.Pads
+	pads[0].connected = true
+	pads[0].buttons[m.pad[.Right]].down = true
+	update_pads(g, &pads)
+	handle_command(g, .Right) // the press itself arrives as a command
+	testing.expect_value(t, player_at(g), [2]int{3, 5})
+	update(g, 1000)
+	x := player_at(g)[0]
+	testing.expect(t, x > 3) // kept going without more presses
+	pads[0].buttons[m.pad[.Right]].down = false
+	update_pads(g, &pads)
+	before := player_at(g)
+	update(g, 1000)
+	testing.expect_value(t, player_at(g), before)
+}

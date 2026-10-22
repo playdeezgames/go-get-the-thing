@@ -107,3 +107,34 @@ draw_arrow :: proc(r: ^cm.Renderer, rc: cm.Rect, a: cm.Action, c: cm.Color) {
 		}
 	}
 }
+
+// The gamepads' per-frame snapshot (the Tool's `update_pads`): remembers the direction a pad button is
+// holding, so `update` keeps walking that way. A direction pressed later wins over one already held.
+update_pads :: proc(g: ^Game, pads: ^cm.Pads) {
+	if g.input_map == nil {
+		return
+	}
+	dirs := [4]cm.Action{.Up, .Down, .Left, .Right}
+	still_down := false
+	newest: cm.Action
+	newest_set := false
+	for &pad in pads {
+		for a in dirs {
+			idx := g.input_map.pad[a]
+			if idx < 0 || idx >= cm.MAX_PAD_BUTTONS || !pad.buttons[idx].down {
+				continue
+			}
+			if g.pad_dir_set && a == g.pad_dir {
+				still_down = true
+			} else {
+				newest, newest_set = a, true
+			}
+		}
+	}
+	switch {
+	case newest_set:
+		g.pad_dir, g.pad_dir_set = newest, true
+	case !still_down:
+		g.pad_dir_set = false
+	}
+}
