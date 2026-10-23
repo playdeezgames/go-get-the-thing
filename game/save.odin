@@ -6,7 +6,7 @@ import "core:encoding/json"
 import "core:fmt"
 import "core:strings"
 
-SAVE_FILE :: "save.json"
+SAVE_FILE :: "go-get-the-thing-save.json" // unique: every itch.io HTML5 game shares one browser storage origin
 SAVE_VERSION :: 2 // 1 (no prestige fields) still loads
 MAX_SAVED_NUMBER :: 1_000_000_000 // well beyond play, and it fits the 32-bit int of the web build
 

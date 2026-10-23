@@ -78,7 +78,7 @@ The plain "collect for points" round is not much of a game, so it becomes an inc
 - `game/save.odin`: the save model <-> JSON (`core:encoding/json`, spec JSON, integers only; reject bad values), with tests. The Tool's `take_save`/`saved`/`wants_load`/`load` hooks, file `save.json`. Saved after every purchase and at the end of each run; loaded once at start.
 - The shop is a list driven by up/down/green (and the on-screen pad), red leaves for the next run; every screen is reachable with keyboard, gamepad and mouse.
 
-**Saving.** The game sets `Tool.take_autosave` (Anvil story 13): native writes `save.json` in the working directory, the web build stores it in browser storage only (no download) and restores it at start. Verified in the browser: buy, reload, the purchase is kept.
+**Saving.** The game sets `Tool.take_autosave` (Anvil story 13): native writes `go-get-the-thing-save.json` in the working directory, the web build stores it in browser storage only (no download) and restores it at start. Verified in the browser: buy, reload, the purchase is kept.
 
 **Order of work.** (1) Author helper characters, extra Things and the `buy` sound in the Anvil. (2) Upgrade model, costs, save/load with tests. (3) Run/Shop state machine and shop screen. (4) Helpers. (5) Balance by playing, then web.
 
