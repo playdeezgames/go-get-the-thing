@@ -148,13 +148,14 @@ test_the_timer_ends_the_run_banks_the_coins_and_the_shop_starts_the_next :: proc
 	testing.expect_value(t, g.state, State.Playing)
 	testing.expect_value(t, g.ms_left, f64(100))
 	update(g, 250)
-	testing.expect_value(t, g.state, State.Shop)
+	testing.expect_value(t, g.state, State.Result)
 	testing.expect_value(t, g.ms_left, f64(0))
 	testing.expect_value(t, g.progress.coins, 3) // the run's coins were banked
 	testing.expect_value(t, g.progress.best_run, 3)
 	testing.expect_value(t, g.last_run, 3)
 	before := player_at(g)
 	testing.expect_value(t, move_player(g, 1, 0), rt.Move_Result.Not_Placed)
+	leave_result(g)
 	handle_command(g, .Right) // in the shop this is not a step
 	testing.expect_value(t, player_at(g), before)
 	handle_command(g, .Green)

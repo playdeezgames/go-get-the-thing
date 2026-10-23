@@ -26,11 +26,12 @@ CHANNEL_EFFECTS :: 0 // a new effect replaces the one still playing
 CHANNEL_HELPERS :: 1 // helpers pick up on their own channel, so they do not cut off the player's sound
 CHANNEL_BONUS :: 2
 
-// Title -> Shop -> Playing (a run) -> Shop -> Playing ...
+// Title -> Shop -> Playing (a run) -> Result -> Shop -> Playing ...
 State :: enum {
 	Title,
 	Shop,
 	Playing,
+	Result, // the run just ended: what it earned, before the shop
 }
 
 Game :: struct {
@@ -52,6 +53,9 @@ Game :: struct {
 	score:      int, // the coins earned in this run (banked into progress.coins when it ends)
 	new_best:   bool, // the last run beat the best run (the shop says so)
 	last_run:   int, // the coins the last run earned, shown in the shop
+	run_things:  [2]int, // Things picked up in the last run: [0] by the player, [1] by helpers
+	run_coins:   [2]int, // the coins those pickups paid (lucky payouts included), same order
+	result_ms:   f64, // how long the result screen has been up (it ignores input at first)
 	ms_left:    f64,
 	round_ms:   f64,
 	points_per_thing: int,
@@ -246,6 +250,7 @@ update :: proc(g: ^Game, dt_ms: f64) {
 		return
 	}
 	g.message_ms = max(g.message_ms - dt_ms, 0)
+	g.result_ms += dt_ms
 	if g.message_ms == 0 {
 		g.prestige_armed = false // an unanswered "press again" runs out
 	}
@@ -296,6 +301,8 @@ draw_frame :: proc(g: ^Game, r: ^cm.Renderer) {
 	white := cm.Color{255, 255, 255}
 	if g.state == .Shop {
 		draw_shop(g, r)
+	} else if g.state == .Result {
+		draw_result(g, r)
 	} else {
 		cols, rows, _ := rt.map_size(g.world, g.map_index)
 		window := rt.zoom_window(g.world, g.map_index, 0, 0, cols, rows, 0, 0, 1)

@@ -44,6 +44,7 @@ test_a_run_adds_to_the_eras_earnings :: proc(t: ^testing.T) {
 	g.score = 40
 	update(g, 31_000)
 	testing.expect_value(t, g.progress.era_earned, 40)
+	leave_result(g)
 	handle_command(g, .Green)
 	g.score = 2
 	update(g, 31_000)
@@ -185,7 +186,7 @@ test_a_run_gets_at_most_the_capped_time_bonuses_so_it_always_ends :: proc(t: ^te
 			break
 		}
 	}
-	testing.expect_value(t, g.state, State.Shop) // the run ended
+	testing.expect_value(t, g.state, State.Result) // the run ended
 	testing.expect(t, g.time_bonuses <= time_bonus_cap(g.progress))
 	testing.expect_value(t, g.time_bonuses, time_bonus_cap(g.progress))
 }

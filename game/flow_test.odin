@@ -205,10 +205,11 @@ test_a_held_pad_direction_does_not_carry_into_the_shop :: proc(t: ^testing.T) {
 	g.has_queued, g.queued = true, cm.Action.Right
 	g.ms_left = 1
 	update(g, 5)
-	testing.expect_value(t, g.state, State.Shop)
+	testing.expect_value(t, g.state, State.Result)
 	testing.expect(t, !g.holding)
 	testing.expect(t, !g.has_queued)
 	update(g, 1000)
+	leave_result(g)
 	testing.expect_value(t, g.shop_sel, 0)
 }
 

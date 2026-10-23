@@ -10,6 +10,7 @@ import cm "anvil:common"
 start_run :: proc(g: ^Game) {
 	rt.play_init(&g.play, g.world)
 	g.score = 0
+	g.run_things, g.run_coins = {}, {}
 	g.ms_left = run_ms(g.progress, g.round_ms)
 	g.step_cooldown_ms = 0
 	g.has_queued = false
@@ -22,7 +23,7 @@ start_run :: proc(g: ^Game) {
 	start_helpers(g)
 }
 
-// The clock ran out: bank the coins, remember the best run, save, and go to the shop.
+// The clock ran out: bank the coins, remember the best run, save, and show the result (then the shop).
 finish_run :: proc(g: ^Game) {
 	g.progress.coins = min(g.progress.coins + g.score, MAX_SAVED_NUMBER)
 	g.progress.era_earned = min(g.progress.era_earned + g.score, MAX_SAVED_NUMBER)
@@ -34,7 +35,8 @@ finish_run :: proc(g: ^Game) {
 	request_save(g)
 	g.shop_sel = 0
 	g.message_ms = 0
-	g.state = .Shop
+	g.result_ms = 0
+	g.state = .Result
 	play(g, g.over_pcm)
 }
 
@@ -53,6 +55,8 @@ handle_command :: proc(g: ^Game, action: cm.Action) {
 		}
 	case .Shop:
 		shop_command(g, action)
+	case .Result:
+		result_command(g, action)
 	case .Playing:
 		dx, dy: int
 		#partial switch action {
@@ -92,9 +96,13 @@ step_collecting :: proc(g: ^Game, ci, dx, dy, sound_channel: int) -> rt.Move_Res
 	result, tx, ty := rt.play_can_step(&g.play, g.world, ci, dx, dy)
 	if result == .Occupied {
 		if who := rt.play_character_at(&g.play, g.map_index, tx, ty); who >= 0 && rt.character_has_tag(g.world, who, g.thing_tag) {
+			before := g.score
 			g.score += coins_per_thing(g.progress, g.points_per_thing)
 			play(g, g.pickup_pcm, sound_channel)
 			roll_secondary_effect(g)
+			by := ci == g.player ? 0 : 1
+			g.run_things[by] += 1
+			g.run_coins[by] += g.score - before
 			rt.play_unplace(&g.play, who)
 			result = rt.play_step(&g.play, g.world, ci, dx, dy)
 			place_on_free_cell(g, who)
