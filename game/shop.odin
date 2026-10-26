@@ -11,6 +11,7 @@ Upgrade :: enum {
 	Helper_Speed,
 	More_Things,
 	Player_Speed,
+	Auto_Start, // an unlock: the START RUN row starts a run by itself
 }
 
 Upgrade_Info :: struct {
@@ -29,12 +30,15 @@ UPGRADES := [Upgrade]Upgrade_Info {
 	.Helper_Speed = {"helper_speed", "HELPER SPEED", "HELPERS STEP FASTER", 150, 210, 8},
 	.More_Things = {"more_things", "MORE THINGS", "ONE MORE THING IN THE ROOM", 400, 350, 3},
 	.Player_Speed = {"player_speed", "PLAYER SPEED", "YOU STEP FASTER", 80, 200, 8},
+	.Auto_Start = {"auto_start", "AUTO START", "START RUN STARTS ITSELF AFTER 15 SECONDS", 1000, 100, 1},
 }
 
 // Perks are bought with gems, the prestige currency, and last through prestiges.
 Perk :: enum {
 	Time_Chance,
 	Lucky_Coins,
+	Auto_Buy, // an unlock: buys a random perk after the shop sits idle
+	Auto_Play, // an unlock: the player's sprite collects on its own
 }
 
 Perk_Info :: struct {
@@ -49,6 +53,8 @@ Perk_Info :: struct {
 PERKS := [Perk]Perk_Info {
 	.Time_Chance = {"time_chance", "TIME BONUS CHANCE", "+5% CHANCE A THING ADDS 5 SECONDS", 2, 150, 10},
 	.Lucky_Coins = {"lucky_coins", "LUCKY COINS", "+4% CHANCE A THING PAYS 5 TIMES", 3, 150, 10},
+	.Auto_Buy = {"auto_buy", "AUTO BUY", "BUYS A RANDOM PERK AFTER 10 SECONDS IDLE", 3, 100, 1},
+	.Auto_Play = {"auto_play", "AUTO PLAY", "YOUR SPRITE COLLECTS ON ITS OWN", 5, 100, 1},
 }
 
 TIME_CHANCE_PCT_PER_LEVEL :: 5
@@ -73,6 +79,24 @@ PLAYER_BASE_STEP_MS :: 250
 PLAYER_STEP_GAIN_MS :: 25
 RUN_LENGTH_GAIN_MS :: 5000
 
+AUTO_BUY_IDLE_MS :: 10000.0 // idle time in the shop before AUTO BUY buys
+AUTO_START_MS :: 15000.0 // time on START RUN before AUTO START starts the run
+AUTO_PLAY_PAUSE_MS :: 1000.0 // after the player's own input, AUTO PLAY waits this long
+RESULT_AUTO_MS :: 4000.0 // with AUTO START, the result screen moves on by itself after this long
+
+// The three automation unlocks have an on/off switch each, in the shop and in the save.
+Toggle :: enum {
+	Auto_Start,
+	Auto_Buy,
+	Auto_Play,
+}
+
+TOGGLE_KEYS := [Toggle]string {
+	.Auto_Start = "auto_start",
+	.Auto_Buy   = "auto_buy",
+	.Auto_Play  = "auto_play",
+}
+
 // What is kept between runs: the currency, the upgrade levels and the best run.
 Progress :: struct {
 	coins:    int,
@@ -82,6 +106,7 @@ Progress :: struct {
 	gems:     int, // the prestige currency, spent on perks
 	prestiges: int, // how many times the player has prestiged
 	perks:    [Perk]int,
+	auto_off: [Toggle]bool, // switched off by the player (an unlock is on until then)
 }
 
 Buy_Result :: enum {
@@ -222,4 +247,41 @@ prestige :: proc(p: ^Progress) -> int {
 	p.era_earned = 0
 	p.levels = {}
 	return gained
+}
+
+// --- the automation unlocks ------------------------------------------------------------------------
+
+upgrade_toggle :: proc(u: Upgrade) -> (Toggle, bool) {
+	return .Auto_Start, u == .Auto_Start
+}
+
+perk_toggle :: proc(k: Perk) -> (Toggle, bool) {
+	#partial switch k {
+	case .Auto_Buy:
+		return .Auto_Buy, true
+	case .Auto_Play:
+		return .Auto_Play, true
+	}
+	return {}, false
+}
+
+toggle_unlocked :: proc(p: Progress, t: Toggle) -> bool {
+	switch t {
+	case .Auto_Start:
+		return p.levels[.Auto_Start] > 0
+	case .Auto_Buy:
+		return p.perks[.Auto_Buy] > 0
+	case .Auto_Play:
+		return p.perks[.Auto_Play] > 0
+	}
+	return false
+}
+
+// Whether the automation is working right now: bought, and not switched off.
+toggle_on :: proc(p: Progress, t: Toggle) -> bool {
+	return toggle_unlocked(p, t) && !p.auto_off[t]
+}
+
+perk_affordable :: proc(p: Progress, k: Perk) -> bool {
+	return p.perks[k] < PERKS[k].max_level && p.gems >= next_perk_cost(p, k)
 }

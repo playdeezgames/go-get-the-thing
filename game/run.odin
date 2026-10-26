@@ -15,6 +15,7 @@ start_run :: proc(g: ^Game) {
 	g.step_cooldown_ms = 0
 	g.has_queued = false
 	g.time_bonuses = 0
+	g.auto_play_pause_ms = 0
 	g.bonus_flash_ms = 0
 	g.state = .Playing
 	for i in 1 ..< min(thing_count(g.progress), g.thing_n) {
@@ -54,6 +55,7 @@ handle_command :: proc(g: ^Game, action: cm.Action) {
 			g.shop_sel = 0
 		}
 	case .Shop:
+		g.idle_ms = 0 // any input is not idling
 		shop_command(g, action)
 	case .Result:
 		result_command(g, action)
@@ -71,6 +73,7 @@ handle_command :: proc(g: ^Game, action: cm.Action) {
 		case:
 			return
 		}
+		g.auto_play_pause_ms = AUTO_PLAY_PAUSE_MS
 		if g.step_cooldown_ms > 0 {
 			g.queued, g.has_queued = action, true // the latest press wins; it fires when the cooldown ends
 			return

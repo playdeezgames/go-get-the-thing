@@ -14,10 +14,10 @@ Row_Kind :: enum {
 
 // Row 0 starts a run, then one row per upgrade, one per perk, and last PRESTIGE.
 SHOP_ROWS :: 1 + len(Upgrade) + len(Perk) + 1
-SHOP_TOP_Y :: 26
-SHOP_ROW_H :: 10
-SHOP_WHAT_Y :: 134
-SHOP_MESSAGE_Y :: 146
+SHOP_TOP_Y :: 24
+SHOP_ROW_H :: 9
+SHOP_WHAT_Y :: 143
+SHOP_MESSAGE_Y :: 152
 SHOP_LEVEL_X :: 150
 SHOP_MESSAGE_MS :: 2500.0
 
@@ -50,13 +50,28 @@ shop_command :: proc(g: ^Game, action: cm.Action) {
 		case .Start:
 			start_run(g)
 		case .Upgrade:
-			buy_result(g, buy(&g.progress, Upgrade(index)), "NOT ENOUGH COINS")
+			if t, is_toggle := upgrade_toggle(Upgrade(index)); is_toggle && toggle_unlocked(g.progress, t) {
+				flip_toggle(g, t)
+			} else {
+				buy_result(g, buy(&g.progress, Upgrade(index)), "NOT ENOUGH COINS")
+			}
 		case .Perk:
-			buy_result(g, buy_perk(&g.progress, Perk(index)), "NOT ENOUGH GEMS")
+			if t, is_toggle := perk_toggle(Perk(index)); is_toggle && toggle_unlocked(g.progress, t) {
+				flip_toggle(g, t)
+			} else {
+				buy_result(g, buy_perk(&g.progress, Perk(index)), "NOT ENOUGH GEMS")
+			}
 		case .Prestige:
 			prestige_pressed(g, armed)
 		}
 	}
+}
+
+// Green on an automation the player owns switches it on or off.
+flip_toggle :: proc(g: ^Game, t: Toggle) {
+	g.progress.auto_off[t] = !g.progress.auto_off[t]
+	request_save(g)
+	say(g, g.progress.auto_off[t] ? "SWITCHED OFF" : "SWITCHED ON")
 }
 
 buy_result :: proc(g: ^Game, result: Buy_Result, poor_message: string) {
@@ -108,14 +123,23 @@ shop_row_text :: proc(g: ^Game, row: int) -> (name, level, cost: string) {
 	kind, index := row_kind(row)
 	switch kind {
 	case .Start:
+		if g.shop_sel == 0 && toggle_on(g.progress, .Auto_Start) {
+			return fmt.tprintf("START RUN  %d", int((AUTO_START_MS - g.auto_start_ms + 999) / 1000)), "", ""
+		}
 		return "START RUN", "", ""
 	case .Upgrade:
 		u := Upgrade(index)
+		if t, is_toggle := upgrade_toggle(u); is_toggle && toggle_unlocked(g.progress, t) {
+			return UPGRADES[u].name, g.progress.auto_off[t] ? "OFF" : "ON", "GREEN SWITCHES"
+		}
 		have := g.progress.levels[u]
 		cost = have >= UPGRADES[u].max_level ? "MAX" : fmt.tprintf("%d", next_cost(g.progress, u))
 		return UPGRADES[u].name, fmt.tprintf("LV %d/%d", have, UPGRADES[u].max_level), cost
 	case .Perk:
 		k := Perk(index)
+		if t, is_toggle := perk_toggle(k); is_toggle && toggle_unlocked(g.progress, t) {
+			return PERKS[k].name, g.progress.auto_off[t] ? "OFF" : "ON", "GREEN SWITCHES"
+		}
 		have := g.progress.perks[k]
 		cost = have >= PERKS[k].max_level ? "MAX" : fmt.tprintf("%d GEMS", next_perk_cost(g.progress, k))
 		return PERKS[k].name, fmt.tprintf("LV %d/%d", have, PERKS[k].max_level), cost
@@ -140,7 +164,7 @@ row_affordable :: proc(g: ^Game, row: int) -> bool {
 		return g.progress.levels[u] < UPGRADES[u].max_level && g.progress.coins >= next_cost(g.progress, u)
 	case .Perk:
 		k := Perk(index)
-		return g.progress.perks[k] < PERKS[k].max_level && g.progress.gems >= next_perk_cost(g.progress, k)
+		return perk_affordable(g.progress, k)
 	case .Prestige:
 		return gems_for_prestige(g.progress.era_earned) > 0
 	}

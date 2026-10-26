@@ -85,6 +85,9 @@ Game :: struct {
 	message_ms: f64,
 	prestige_armed: bool, // the PRESTIGE row was pressed once and waits for a second press
 	time_bonuses: int, // how many time bonuses this run has had (limited by time_bonus_cap)
+	idle_ms:    f64, // shop: time with no input while AUTO BUY has something to buy
+	auto_start_ms: f64, // shop: time spent on START RUN while AUTO START is on
+	auto_play_pause_ms: f64, // AUTO PLAY waits until this runs out after the player's own input
 	bonus_flash_ms: f64, // the HUD shows "+5 SEC" until this runs out
 }
 
@@ -261,12 +264,18 @@ update :: proc(g: ^Game, dt_ms: f64) {
 		handle_command(g, g.queued)
 	}
 	repeat_held(g, dt_ms)
+	run_shop_automation(g, dt_ms)
+	if g.state == .Result && toggle_on(g.progress, .Auto_Start) && g.result_ms >= RESULT_AUTO_MS {
+		result_command(g, .Green)
+	}
 	if g.state != .Playing {
 		return
 	}
+	g.auto_play_pause_ms = max(g.auto_play_pause_ms - dt_ms, 0)
 	if g.pad_dir_set && g.step_cooldown_ms == 0 && !g.has_queued {
 		handle_command(g, g.pad_dir) // a held gamepad direction keeps walking
 	}
+	auto_play_step(g)
 	run_helpers(g, dt_ms)
 	g.ms_left -= dt_ms
 	if g.ms_left <= 0 {

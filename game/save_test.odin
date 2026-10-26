@@ -10,6 +10,8 @@ test_progress_survives_a_save_and_load :: proc(t: ^testing.T) {
 	p.levels[.Thing_Value], p.levels[.Helpers], p.levels[.Player_Speed] = 3, 2, 8
 	p.era_earned, p.gems, p.prestiges = 4321, 7, 2
 	p.perks[.Time_Chance] = 3
+	p.perks[.Auto_Play] = 1
+	p.auto_off[.Auto_Buy] = true
 	text := progress_to_json(p)
 	back, ok := progress_from_json(transmute([]u8)text)
 	testing.expect(t, ok)
@@ -29,9 +31,11 @@ test_a_bad_save_is_refused :: proc(t: ^testing.T) {
 	bad := []string {
 		``,
 		`not json`,
+		`{"version": 3, "coins": 1, "best_run": 0, "levels": {}, "auto_off": {"made_up": 1}}`,
+		`{"version": 3, "coins": 1, "best_run": 0, "levels": {}, "auto_off": {"auto_play": 2}}`,
 		`[]`,
 		`{"coins": 1}`, // no version
-		`{"version": 3, "coins": 1, "best_run": 0, "levels": {}}`, // from a newer game
+		`{"version": 4, "coins": 1, "best_run": 0, "levels": {}}`, // from a newer game
 		`{"version": 0, "coins": 1, "best_run": 0, "levels": {}}`,
 		`{"version": 2, "coins": 1, "best_run": 0, "gems": -1, "levels": {}}`,
 		`{"version": 2, "coins": 1, "best_run": 0, "era_earned": 1.5, "levels": {}}`,

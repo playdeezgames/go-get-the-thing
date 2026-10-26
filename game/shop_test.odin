@@ -52,7 +52,7 @@ test_effects_follow_the_levels :: proc(t: ^testing.T) {
 	testing.expect_value(t, helper_step_ms(p), f64(600))
 	testing.expect_value(t, thing_count(p), 1)
 	testing.expect_value(t, player_step_ms(p), f64(250))
-	p.levels = {.Thing_Value = 3, .Run_Length = 2, .Helpers = 4, .Helper_Speed = 8, .More_Things = 3, .Player_Speed = 8}
+	p.levels = #partial {.Thing_Value = 3, .Run_Length = 2, .Helpers = 4, .Helper_Speed = 8, .More_Things = 3, .Player_Speed = 8}
 	testing.expect_value(t, coins_per_thing(p, 1), 4)
 	testing.expect_value(t, coins_per_thing(p, 2), 8)
 	testing.expect_value(t, run_ms(p, 30_000), f64(40_000))

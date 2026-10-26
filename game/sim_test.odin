@@ -67,6 +67,9 @@ simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_
 		for {
 			cheapest, found := Upgrade.Thing_Value, false
 			for u in Upgrade {
+				if u == .Auto_Start {
+					continue // the automation unlocks are not part of the economy simulation
+				}
 				if g.progress.levels[u] < UPGRADES[u].max_level && (!found || next_cost(g.progress, u) < next_cost(g.progress, cheapest)) {
 					cheapest, found = u, true
 				}
@@ -89,6 +92,9 @@ simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_
 				// the cheaper perk first, while a gem price can be paid
 				best, found := Perk.Time_Chance, false
 				for k in Perk {
+					if k == .Auto_Buy || k == .Auto_Play {
+						continue
+					}
 					if g.progress.perks[k] < PERKS[k].max_level && (!found || next_perk_cost(g.progress, k) < next_perk_cost(g.progress, best)) {
 						best, found = k, true
 					}
@@ -108,6 +114,9 @@ simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_
 		}
 		done := prestige_at == 0
 		for u in Upgrade {
+			if u == .Auto_Start {
+				continue
+			}
 			done &&= g.progress.levels[u] >= UPGRADES[u].max_level
 		}
 		if done {

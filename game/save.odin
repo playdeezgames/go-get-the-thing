@@ -7,7 +7,7 @@ import "core:fmt"
 import "core:strings"
 
 SAVE_FILE :: "go-get-the-thing-save.json" // unique: every itch.io HTML5 game shares one browser storage origin
-SAVE_VERSION :: 2 // 1 (no prestige fields) still loads
+SAVE_VERSION :: 3 // 1 (no prestige fields) and 2 (no switches) still load
 MAX_SAVED_NUMBER :: 1_000_000_000 // well beyond play, and it fits the 32-bit int of the web build
 
 // The save text, on the temp allocator.
@@ -27,6 +27,12 @@ progress_to_json :: proc(p: Progress) -> string {
 	first = true
 	for k in Perk {
 		fmt.sbprintf(&b, `%s"%s": %d`, first ? "" : ", ", PERKS[k].key, p.perks[k])
+		first = false
+	}
+	strings.write_string(&b, `}, "auto_off": {`)
+	first = true
+	for t in Toggle {
+		fmt.sbprintf(&b, `%s"%s": %d`, first ? "" : ", ", TOGGLE_KEYS[t], p.auto_off[t] ? 1 : 0)
 		first = false
 	}
 	strings.write_string(&b, "}}\n")
@@ -93,7 +99,33 @@ progress_from_json :: proc(bytes: []u8) -> (p: Progress, ok: bool) {
 			p.perks[k] = level
 		}
 	}
+	if av, present := obj["auto_off"]; present {
+		switches, is_obj := av.(json.Object)
+		if !is_obj {
+			return {}, false
+		}
+		for key in switches {
+			t, known := toggle_for_key(key)
+			if !known {
+				return {}, false
+			}
+			off, off_ok := whole_number(switches, key, 1)
+			if !off_ok {
+				return {}, false
+			}
+			p.auto_off[t] = off == 1
+		}
+	}
 	return p, true
+}
+
+toggle_for_key :: proc(key: string) -> (Toggle, bool) {
+	for t in Toggle {
+		if TOGGLE_KEYS[t] == key {
+			return t, true
+		}
+	}
+	return {}, false
 }
 
 // Like `whole_number`, but a member that is not there is 0 (an older save).
