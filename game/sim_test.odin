@@ -29,6 +29,7 @@ Sim_Era :: struct {
 	last_earned: int, // what the last run before the prestige earned
 	perk_level: int, // the time-chance level after spending the gems
 	lucky_level: int, // the lucky-coins level
+	boost_level: int, // the coin-boost level
 }
 
 Sim :: struct {
@@ -103,7 +104,7 @@ simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_
 					break
 				}
 			}
-			append(&sim.eras, Sim_Era{run, sim.total_game_s / 60 + run_s / 60, gained, earned, r.earned, g.progress.perks[.Time_Chance], g.progress.perks[.Lucky_Coins]})
+			append(&sim.eras, Sim_Era{run, sim.total_game_s / 60 + run_s / 60, gained, earned, r.earned, g.progress.perks[.Time_Chance], g.progress.perks[.Lucky_Coins], g.progress.perks[.Coin_Boost]})
 		}
 		r.coins_after_shop = g.progress.coins
 		r.levels = g.progress.levels
@@ -153,7 +154,7 @@ report :: proc(title: string, sim: Sim, table: bool) {
 		delete(sim.runs)
 	}
 	for e, i in sim.eras {
-		fmt.printfln("  prestige %d after run %d (%.0f min): era earned %d, last run %d, +%d gems, time-chance level %d, lucky level %d", i + 1, e.run, e.minutes, e.era_earned, e.last_earned, e.gained, e.perk_level, e.lucky_level)
+		fmt.printfln("  prestige %d after run %d (%.0f min): era earned %d, last run %d, +%d gems, time-chance level %d, lucky level %d, boost level %d", i + 1, e.run, e.minutes, e.era_earned, e.last_earned, e.gained, e.perk_level, e.lucky_level, e.boost_level)
 	}
 	defer delete(sim.eras)
 	first, last := sim.runs[0], sim.runs[len(sim.runs) - 1]

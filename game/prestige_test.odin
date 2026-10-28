@@ -250,3 +250,16 @@ test_a_thing_can_pay_extra_coins_by_chance :: proc(t: ^testing.T) {
 	}
 	testing.expect(t, hits > 60 && hits < 140) // about 100 of 500
 }
+
+@(test)
+test_coin_boost_adds_a_quarter_of_the_coins_per_level :: proc(t: ^testing.T) {
+	p: Progress
+	testing.expect_value(t, coins_per_thing(p, 1), 1)
+	p.perks[.Coin_Boost] = 1
+	testing.expect_value(t, coins_per_thing(p, 1), 2) // rounded up: felt from the start
+	p.levels[.Thing_Value] = 3 // 4 coins
+	testing.expect_value(t, coins_per_thing(p, 1), 5) // 4 * 125 / 100
+	p.perks[.Coin_Boost] = 4
+	testing.expect_value(t, coins_per_thing(p, 1), 8) // twice
+	testing.expect_value(t, next_perk_cost(Progress{}, .Coin_Boost), 1)
+}

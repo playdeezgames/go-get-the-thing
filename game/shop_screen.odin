@@ -15,7 +15,7 @@ Row_Kind :: enum {
 // Row 0 starts a run, then one row per upgrade, one per perk, and last PRESTIGE.
 SHOP_ROWS :: 1 + len(Upgrade) + len(Perk) + 1
 SHOP_TOP_Y :: 24
-SHOP_ROW_H :: 9
+SHOP_ROW_H :: 8
 SHOP_WHAT_Y :: 143
 SHOP_MESSAGE_Y :: 152
 SHOP_LEVEL_X :: 150
@@ -211,7 +211,7 @@ draw_shop :: proc(g: ^Game, r: ^cm.Renderer) {
 		y := SHOP_TOP_Y + row * SHOP_ROW_H
 		selected := row == g.shop_sel
 		if selected {
-			cm.renderer_fill_rect(r, 0, y - 2, cm.SCREEN_W, SHOP_ROW_H - 1, g.prestige_armed ? cm.Color{110, 0, 0} : cm.Color{0, 0, 90})
+			cm.renderer_fill_rect(r, 0, y - 2, cm.SCREEN_W, SHOP_ROW_H, g.prestige_armed ? cm.Color{110, 0, 0} : cm.Color{0, 0, 90})
 			cm.draw_text(r, 4, y, ">", gold)
 		}
 		name, level, cost := shop_row_text(g, row)

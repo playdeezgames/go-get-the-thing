@@ -37,6 +37,7 @@ UPGRADES := [Upgrade]Upgrade_Info {
 Perk :: enum {
 	Time_Chance,
 	Lucky_Coins,
+	Coin_Boost,
 	Auto_Buy, // an unlock: buys a random perk after the shop sits idle
 	Auto_Play, // an unlock: the player's sprite collects on its own
 }
@@ -53,6 +54,7 @@ Perk_Info :: struct {
 PERKS := [Perk]Perk_Info {
 	.Time_Chance = {"time_chance", "TIME BONUS CHANCE", "+5% CHANCE A THING ADDS 5 SECONDS", 2, 150, 10},
 	.Lucky_Coins = {"lucky_coins", "LUCKY COINS", "+4% CHANCE A THING PAYS 5 TIMES", 3, 150, 10},
+	.Coin_Boost = {"coin_boost", "COIN BOOST", "+25% COINS FROM EVERY THING", 1, 140, 10},
 	.Auto_Buy = {"auto_buy", "AUTO BUY", "BUYS A RANDOM PERK AFTER 10 SECONDS IDLE", 3, 100, 1},
 	.Auto_Play = {"auto_play", "AUTO PLAY", "YOUR SPRITE COLLECTS ON ITS OWN", 5, 100, 1},
 }
@@ -61,6 +63,7 @@ TIME_CHANCE_PCT_PER_LEVEL :: 5
 TIME_BONUS_MS :: 5000
 LUCKY_CHANCE_PCT_PER_LEVEL :: 4
 LUCKY_MULTIPLIER :: 5
+COIN_BOOST_PCT_PER_LEVEL :: 25
 // Helpers pick up Things many times a second late in the game: without a limit a small chance of
 // extra time would outrun the clock and a run would never end. The limit grows with the perk's
 // level, so every level of it matters.
@@ -148,7 +151,8 @@ buy :: proc(p: ^Progress, u: Upgrade) -> Buy_Result {
 // --- what the levels do ------------------------------------------------------------------------
 
 coins_per_thing :: proc(p: Progress, base: int) -> int {
-	return base * (1 + p.levels[.Thing_Value])
+	// rounded up, so the first boost levels are felt even when a Thing pays a single coin
+	return (base * (1 + p.levels[.Thing_Value]) * (100 + COIN_BOOST_PCT_PER_LEVEL * p.perks[.Coin_Boost]) + 99) / 100
 }
 
 run_ms :: proc(p: Progress, base_ms: f64) -> f64 {
