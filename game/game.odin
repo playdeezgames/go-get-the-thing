@@ -319,7 +319,7 @@ draw_frame :: proc(g: ^Game, r: ^cm.Renderer) {
 		rt.draw_characters(r, g.world, &g.play, window)
 		if g.state == .Title {
 			banner(r, 56, "GO GET THE THING!", white)
-			banner(r, 72, fmt.tprintf("%s TO START", cm.action_label(g.input_map, .Green)), white)
+			banner(r, 72, fmt.tprintf("%s FOR THE SHOP", cm.action_label(g.input_map, .Green)), white)
 			banner(r, 88, "ARROWS OR THE PAD TO MOVE", white)
 			banner(r, 100, "SAVES ITSELF", white)
 		}
