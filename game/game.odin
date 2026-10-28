@@ -9,7 +9,20 @@ import "core:fmt"
 WORLD_FILE :: #load("../world.json")
 TAGS_FILE :: #load("../game_tags.json")
 
-MAP_NAME :: "arena"
+MAP_NAME :: "arena" // the first room, and the one the world places the characters in
+
+// Each run is played in one of these rooms, picked at random from the ones the best run has unlocked
+// (a room opens once `best_run` reaches its number; the arena is always open). The player starts on
+// the room's first `start` cell.
+ROOMS := [?]struct {
+	name:   string,
+	unlock: int,
+} {
+	{MAP_NAME, 0},
+	{"pillars", 30},
+	{"snake", 100},
+	{"chambers", 300},
+}
 
 DEFAULT_ROUND_SECONDS :: 30
 DEFAULT_POINTS_PER_THING :: 1
@@ -48,9 +61,12 @@ Game :: struct {
 	helper_clock: [MAX_HELPERS]f64, // until each helper steps again
 	thing_tag:  int,
 	spawn_tag:  int,
+	start_tag:  int,
+	room_maps:  [len(ROOMS)]int, // the map index of each room
 	error:      string, // set when start-up failed: shown instead of the game
 	state:      State,
 	score:      int, // the coins earned in this run (banked into progress.coins when it ends)
+	new_room:   bool, // the last run opened a room (the result screen says so)
 	new_best:   bool, // the last run beat the best run (the shop says so)
 	last_run:   int, // the coins the last run earned, shown in the shop
 	run_things:  [2]int, // Things picked up in the last run: [0] by the player, [1] by helpers
@@ -141,6 +157,17 @@ init :: proc(g: ^Game) {
 	ok: bool
 	g.thing_tag, _ = rt.find_tag(g.world, "thing")
 	g.spawn_tag, _ = rt.find_tag(g.world, "spawn")
+	g.start_tag, _ = rt.find_tag(g.world, "start")
+	for room, i in ROOMS {
+		if g.room_maps[i], ok = rt.find_map(g.world, room.name); !ok {
+			g.error = fmt.aprintf("WORLD HAS NO MAP %s", room.name)
+			return
+		}
+		if len(rt.cells_with_tag(g.world, g.room_maps[i], g.start_tag)) == 0 {
+			g.error = fmt.aprintf("MAP %s HAS NO START CELL", room.name)
+			return
+		}
+	}
 	if g.map_index, ok = rt.find_map(g.world, MAP_NAME); !ok {
 		g.error = fmt.aprintf("WORLD HAS NO MAP %s", MAP_NAME)
 		return

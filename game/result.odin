@@ -29,7 +29,10 @@ draw_result :: proc(g: ^Game, r: ^cm.Renderer) {
 	} else {
 		centred(r, all, 84, fmt.tprintf("BEST %d", g.progress.best_run), grey)
 	}
-	centred(r, all, 104, fmt.tprintf("COINS %d", g.progress.coins), white)
+	if g.new_room {
+		centred(r, all, 94, "NEW ROOM OPENED!", cm.Color{85, 255, 85})
+	}
+	centred(r, all, 108, fmt.tprintf("COINS %d", g.progress.coins), white)
 	if g.result_ms >= RESULT_LOCK_MS {
 		centred(r, all, 136, fmt.tprintf("%s TO CONTINUE", cm.action_label(g.input_map, .Green)), white)
 	}

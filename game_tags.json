@@ -1,1 +1,1 @@
-{"tags": [{"name": "thing", "note": "what the player picks up"}, {"name": "spawn", "note": "cells the Thing may appear on"}]}
+{"tags": [{"name": "thing", "note": "what the player picks up"}, {"name": "spawn", "note": "cells the Thing may appear on"}, {"name": "start", "note": "where the player begins a run in a room"}]}

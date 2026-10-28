@@ -17,6 +17,8 @@ Sim_Run :: struct {
 	era_earned: int, // the era's total after this run
 	run_s:     f64,
 	coins_after_shop: int,
+	player_things, helper_things: int, // Things picked up in the run
+	next_cost: int, // the cheapest upgrade still to buy, after shopping
 	bought:    [dynamic]Upgrade,
 	levels:    [Upgrade]int,
 }
@@ -63,7 +65,7 @@ simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_
 			update(g, SIM_FRAME_MS)
 			free_all(context.temp_allocator)
 		}
-		r := Sim_Run{earned = g.last_run, run_s = run_s, era_earned = g.progress.era_earned}
+		r := Sim_Run{earned = g.last_run, run_s = run_s, era_earned = g.progress.era_earned, player_things = g.run_things[0], helper_things = g.run_things[1]}
 		// shopping: always the cheapest upgrade that is not maxed, while it can be paid
 		for {
 			cheapest, found := Upgrade.Thing_Value, false
@@ -107,6 +109,11 @@ simulate :: proc(seed: u64, afk_with_helpers: int, prestige_at := 0, stop_after_
 			append(&sim.eras, Sim_Era{run, sim.total_game_s / 60 + run_s / 60, gained, earned, r.earned, g.progress.perks[.Time_Chance], g.progress.perks[.Lucky_Coins], g.progress.perks[.Coin_Boost]})
 		}
 		r.coins_after_shop = g.progress.coins
+		for u in Upgrade {
+			if u != .Auto_Start && g.progress.levels[u] < UPGRADES[u].max_level && (r.next_cost == 0 || next_cost(g.progress, u) < r.next_cost) {
+				r.next_cost = next_cost(g.progress, u)
+			}
+		}
 		r.levels = g.progress.levels
 		append(&sim.runs, r)
 		sim.total_game_s += run_s
@@ -139,8 +146,8 @@ report :: proc(title: string, sim: Sim, table: bool) {
 					names = fmt.tprintf("%s %s", names, UPGRADES[b].name)
 				}
 				fmt.printfln(
-					"%3d  %6d  %4.0f  [%d %d %d %d %d %d]  [%d -> %d gems]%s",
-					i + 1, r.earned, r.run_s,
+					"%3d  %6d  %4.0f  you %3d helpers %3d  next %5d (%.1f runs)  [%d %d %d %d %d %d]  [%d -> %d gems]%s",
+					i + 1, r.earned, r.run_s, r.player_things, r.helper_things, r.next_cost, f64(max(r.next_cost - r.coins_after_shop, 0)) / f64(max(r.earned, 1)),
 					r.levels[.Thing_Value], r.levels[.Run_Length], r.levels[.Helpers], r.levels[.Helper_Speed], r.levels[.More_Things], r.levels[.Player_Speed],
 					r.era_earned, gems_for_prestige(r.era_earned), names,
 				)
@@ -192,4 +199,14 @@ test_balance_report :: proc(t: ^testing.T) {
 		report(fmt.aprintf("prestige as soon as it is worth %d gems, 5 times", at), simulate(1, 0, at, 5), false)
 	}
 	_ = cm.SCREEN_W
+}
+
+// The early game run by run (with the new numbers in view):
+//   ./build.sh test -define:SIM=true -define:SIM_FRAME=40 -define:ODIN_TEST_NAMES=game.test_early_economy
+@(test)
+test_early_economy :: proc(t: ^testing.T) {
+	when !SIM {
+		return
+	}
+	report("early game, prestige at 5 gems once", simulate(1, 0, 5, 1), true)
 }

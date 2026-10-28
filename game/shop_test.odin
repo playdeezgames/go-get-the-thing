@@ -7,8 +7,8 @@ import "core:testing"
 @(test)
 test_an_upgrade_costs_its_base_at_level_zero_and_more_each_level :: proc(t: ^testing.T) {
 	testing.expect_value(t, upgrade_cost(.Thing_Value, 0), 8)
-	testing.expect_value(t, upgrade_cost(.Thing_Value, 1), 13) // 8 * 160%, rounded
-	testing.expect_value(t, upgrade_cost(.Thing_Value, 2), 21)
+	testing.expect_value(t, upgrade_cost(.Thing_Value, 1), 13) // 8 * 150%, plus 1
+	testing.expect_value(t, upgrade_cost(.Thing_Value, 2), 20)
 	for u in Upgrade {
 		testing.expect_value(t, upgrade_cost(u, 0), UPGRADES[u].base_cost)
 		for level in 1 ..< UPGRADES[u].max_level {
@@ -49,7 +49,7 @@ test_effects_follow_the_levels :: proc(t: ^testing.T) {
 	testing.expect_value(t, coins_per_thing(p, 1), 1)
 	testing.expect_value(t, run_ms(p, 30_000), f64(30_000))
 	testing.expect_value(t, helper_count(p), 0)
-	testing.expect_value(t, helper_step_ms(p), f64(600))
+	testing.expect_value(t, helper_step_ms(p), f64(360))
 	testing.expect_value(t, thing_count(p), 1)
 	testing.expect_value(t, player_step_ms(p), f64(250))
 	p.levels = #partial {.Thing_Value = 3, .Run_Length = 2, .Helpers = 4, .Helper_Speed = 8, .More_Things = 3, .Player_Speed = 8}

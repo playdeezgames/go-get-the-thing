@@ -9,6 +9,7 @@ import cm "anvil:common"
 // upgrade lengthens it) and as many Things in the room as the upgrades allow.
 start_run :: proc(g: ^Game) {
 	rt.play_init(&g.play, g.world)
+	enter_room(g, pick_room(g))
 	g.score = 0
 	g.run_things, g.run_coins = {}, {}
 	g.ms_left = run_ms(g.progress, g.round_ms)
@@ -24,12 +25,45 @@ start_run :: proc(g: ^Game) {
 	start_helpers(g)
 }
 
+// How many rooms the best run has opened (the first is always open).
+rooms_unlocked :: proc(p: Progress) -> int {
+	n := 0
+	for room in ROOMS {
+		if p.best_run >= room.unlock {
+			n += 1
+		}
+	}
+	return n
+}
+
+// A random open room. With only the arena open no dice are rolled, so the numbers a game draws do not
+// change until a second room opens.
+pick_room :: proc(g: ^Game) -> int {
+	n := rooms_unlocked(g.progress)
+	return n > 1 ? random_below(g, n) : 0
+}
+
+// Plays the run in `room`. The world places the characters in the arena, so another room needs the
+// player on its start cell and the first Thing somewhere in it.
+enter_room :: proc(g: ^Game, room: int) {
+	g.map_index = g.room_maps[room]
+	if room == 0 {
+		return
+	}
+	start := rt.cells_with_tag(g.world, g.map_index, g.start_tag)
+	rt.play_place(&g.play, g.world, g.player, g.map_index, start[0].x, start[0].y)
+	rt.play_unplace(&g.play, g.thing)
+	place_on_free_cell(g, g.thing)
+}
+
 // The clock ran out: bank the coins, remember the best run, save, and show the result (then the shop).
 finish_run :: proc(g: ^Game) {
 	g.progress.coins = min(g.progress.coins + g.score, MAX_SAVED_NUMBER)
 	g.progress.era_earned = min(g.progress.era_earned + g.score, MAX_SAVED_NUMBER)
 	g.new_best = g.score > g.progress.best_run
+	rooms := rooms_unlocked(g.progress)
 	g.progress.best_run = max(g.progress.best_run, g.score)
+	g.new_room = rooms_unlocked(g.progress) > rooms
 	g.last_run = g.score
 	g.has_queued = false
 	g.holding = false // a pad direction still held would race through the shop rows

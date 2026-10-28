@@ -24,9 +24,9 @@ Upgrade_Info :: struct {
 }
 
 UPGRADES := [Upgrade]Upgrade_Info {
-	.Thing_Value = {"thing_value", "THING VALUE", "+1 COIN PER THING", 8, 160, 20},
+	.Thing_Value = {"thing_value", "THING VALUE", "+1 COIN PER THING", 8, 150, 20},
 	.Run_Length = {"run_length", "RUN LENGTH", "+5 SECONDS PER RUN", 60, 210, 12},
-	.Helpers = {"helpers", "HELPERS", "A HELPER COLLECTS FOR YOU", 150, 320, 4},
+	.Helpers = {"helpers", "HELPERS", "A HELPER COLLECTS FOR YOU", 120, 320, 4},
 	.Helper_Speed = {"helper_speed", "HELPER SPEED", "HELPERS STEP FASTER", 150, 210, 8},
 	.More_Things = {"more_things", "MORE THINGS", "ONE MORE THING IN THE ROOM", 400, 350, 3},
 	.Player_Speed = {"player_speed", "PLAYER SPEED", "YOU STEP FASTER", 80, 200, 8},
@@ -76,8 +76,8 @@ next_gem_at :: proc(gain: int) -> int {
 	return (gain + 1) * (gain + 1) * GEM_ERA_DIVISOR
 }
 
-HELPER_BASE_STEP_MS :: 600
-HELPER_STEP_GAIN_MS :: 60
+HELPER_BASE_STEP_MS :: 360
+HELPER_STEP_GAIN_MS :: 30
 PLAYER_BASE_STEP_MS :: 250
 PLAYER_STEP_GAIN_MS :: 25
 RUN_LENGTH_GAIN_MS :: 5000
