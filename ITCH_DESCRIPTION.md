@@ -1,6 +1,7 @@
 # Itch.io page text
 
 Page: https://thegrumpygamedev.itch.io/go-get-the-thing
+Latest version: https://playdeezgames.github.io/go-get-the-thing/
 Pasted in by hand; nothing here is published by the repo.
 
 ## Short description
@@ -10,6 +11,8 @@ A tiny incremental game: run around a walled room, go get the Thing, spend the c
 ## Paste this as the page description
 
 Go get the Thing!
+
+Latest version, always current: https://playdeezgames.github.io/go-get-the-thing/
 
 You are a small blue person in a walled room with one glowing Thing. Walk onto it and it pays out coins, then turns up somewhere else. When the clock runs out the run is over, and you spend what you earned in the shop.
 
@@ -25,7 +28,7 @@ Made with the Anvil of SPLORR!!, TheGrumpyGameDev's own asset tools: the art, th
 
 ## Notes (not for the page)
 
-- Push target: `thegrumpygamedev/go-get-the-thing:html` (pushed October 23, 2026, build 2191917). `tools/ship.sh` builds and zips; it only pushes with `--push`.
+- Push target: `thegrumpygamedev/go-get-the-thing:html` (pushed October 30, 2026, build 2250890; first pushed October 23). `tools/ship.sh` builds and zips; it only pushes with `--push`.
 - On the page's Edit game screen: "Kind of project" HTML, "This file will be played in the browser" ticked, and an embed of 960 by 540 (the game is 320 by 180 and scales to fit).
 - The cover is `assets/cover.png` (630 by 500) and the screenshots are in `assets/screenshots/`, both made by `tools/make_cover.py` from raw 320 by 180 captures of the web build.
 - The page text discloses that the game was written with Claude Code. If the edit screen has a generative-AI disclosure field, fill it in to match.
