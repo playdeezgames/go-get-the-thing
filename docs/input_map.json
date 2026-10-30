@@ -1,0 +1,33 @@
+{
+  "_note": "This game's own bindings (build.sh prefers this over the Anvil's input_map.json). Gamepad values are standard-layout button indices; A is 0 and B is 1, so green (select) is A and red (start a run) is B.",
+  "gamepad": {
+    "up": 12,
+    "down": 13,
+    "left": 14,
+    "right": 15,
+    "green": 0,
+    "red": 1,
+    "blue": 9,
+    "yellow": 8
+  },
+  "keyboard": {
+    "up": "ArrowUp",
+    "down": "ArrowDown",
+    "left": "ArrowLeft",
+    "right": "ArrowRight",
+    "green": "Space",
+    "red": "Escape",
+    "blue": "Enter",
+    "yellow": "Tab"
+  },
+  "labels": {
+    "up": "UP",
+    "down": "DOWN",
+    "left": "LEFT",
+    "right": "RIGHT",
+    "green": "SPACE/A",
+    "red": "ESC/B",
+    "blue": "ENTER/START",
+    "yellow": "TAB/SELECT"
+  }
+}
